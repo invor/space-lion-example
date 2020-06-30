@@ -14,3 +14,6 @@ target_sources(ExampleProject
 )
 
 target_link_libraries(ExampleProject PUBLIC EngineCore)
+
+SET(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
+install(TARGETS ExampleProject DESTINATION bin)
