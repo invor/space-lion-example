@@ -13,7 +13,7 @@ target_sources(ExampleProject
         src/main.cpp
 )
 
-target_link_libraries(ExampleProject PUBLIC EngineCore)
+target_link_libraries(ExampleProject PUBLIC SpaceLion)
 
 SET(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS ExampleProject DESTINATION bin)
