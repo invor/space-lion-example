@@ -10,14 +10,14 @@
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::OpenGL::ResourceManager& resource_manager)
 {
     auto& entity_mngr = world_state.accessEntityManager();
-    auto& camera_mngr = world_state.accessCameraComponentManager();
-    auto& gltf_mngr = world_state.accessGltfAssetComponentManager();
-    auto& mtl_mngr = world_state.accessMaterialComponentManager();
-    auto& mesh_mngr = world_state.accessMeshComponentManager();
+    auto& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
+    auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& rsrc_mngr = resource_manager;
-    auto& renderTask_mngr = world_state.accessRenderTaskComponentManager();
-    auto& transform_mngr = world_state.accessTransformManager();
-    auto& turntable_mngr = world_state.accessTurntableManager();
+    auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager>();
+    auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
+    auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
 
     auto camera = entity_mngr.create();
     transform_mngr.addComponent(camera, Vec3(0.0, 0.0, 2.5));
