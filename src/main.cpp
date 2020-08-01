@@ -4,6 +4,9 @@
 #include "EngineFrontend.hpp"
 #include "OpenGL/ResourceManager.hpp"
 
+#include "PointlightComponent.hpp"
+#include "SunlightComponentManager.hpp"
+
 #include "..\Editor\CameraController.hpp"
 
 
@@ -14,8 +17,10 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
     auto& rsrc_mngr = resource_manager;
     auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager>();
+    auto& sunlight_mngr = world_state.get<EngineCore::Graphics::SunlightComponentManager>();
     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
 
@@ -23,6 +28,10 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     transform_mngr.addComponent(camera, Vec3(0.0, 0.0, 2.5));
     camera_mngr.addComponent(camera);
     camera_mngr.setActiveCamera(camera);
+
+    Entity sun_entity = entity_mngr.create();
+    transform_mngr.addComponent(sun_entity, Vec3(105783174465.5f, 105783174465.5f, 5783174465.5f), Quat(), Vec3(1.0f));
+    sunlight_mngr.addComponent(sun_entity, Vec3(1.0f), 3.75f * std::pow(10.0f, 28.0f), 696342000.0f);
 
     //TODO create turntable animation
     //auto cube = entity_mngr.create();
@@ -106,8 +115,10 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
 
     auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>>(
         std::initializer_list<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>{
+            //{ "../space-lion/resources/shaders/simple_forward_vert.glsl", glowl::GLSLProgram::ShaderType::Vertex },
+            //{ "../space-lion/resources/shaders/fwd_pbrMetallic_f.glsl", glowl::GLSLProgram::ShaderType::Fragment }
             { "../space-lion/resources/shaders/simple_forward_vert.glsl", glowl::GLSLProgram::ShaderType::Vertex },
-            { "../space-lion/resources/shaders/fwd_pbrMetallic_f.glsl", glowl::GLSLProgram::ShaderType::Fragment }
+            { "../space-lion/resources/shaders/dfr_geomPass_f.glsl", glowl::GLSLProgram::ShaderType::Fragment }
     });
 
     auto shader_rsrc = rsrc_mngr.createShaderProgramAsync(
@@ -119,14 +130,11 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
 
     //renderTask_mngr.addComponent(cube, mesh_rsrc, 0, shader_rsrc, 0);
 
-    //Graphics::OpenGL::loadGLTFScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", *m_world_state, rsrc_mngr);
-
-
-    for (int x = -18; x <= 18; ++x)
+    for (int x = -1; x <= 1; ++x)
     {
-        for (int y = -18; y <= 18; ++y)
+        for (int y = -1; y <= 1; ++y)
         {
-            for (int z = -18; z <= 18; ++z)
+            for (int z = -1; z <= 1; ++z)
             {
                 auto gltf_root = entity_mngr.create();
                 transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
@@ -188,7 +196,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
 
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
 
-    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/Walkman_01.blend/Walkman_01.gltf", shader_rsrc);
+    // gltf_mngr.importGltfScene("C:/Users/Invor/Downloads/rungholt/gltf/rungholt.gltf", shader_rsrc);
 
 }
 
