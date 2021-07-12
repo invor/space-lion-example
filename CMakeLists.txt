@@ -11,6 +11,8 @@ add_executable(ExampleProject "")
 target_sources(ExampleProject
     PRIVATE
         src/main.cpp
+        src/OpenGLEngineFrontend.hpp
+        src/OpenGLEngineFrontend.cpp
 )
 
 target_link_libraries(ExampleProject PUBLIC SpaceLion)

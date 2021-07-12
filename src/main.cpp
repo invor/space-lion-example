@@ -1,7 +1,7 @@
 #include <thread>
 #include <future>
 
-#include "EngineFrontend.hpp"
+#include "OpenGLEngineFrontend.hpp"
 #include "OpenGL/ResourceManager.hpp"
 
 #include "AtmosphereComponentManager.hpp"
@@ -222,9 +222,9 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
 
 int main() {
 
-    EngineCore::Common::EngineFrontend engine_frontend;
+    OpenGLEngineFrontend engine_frontend;
 
-    std::thread engine_thread(&(EngineCore::Common::EngineFrontend::startEngine), &engine_frontend);
+    std::thread engine_thread(&(OpenGLEngineFrontend::startEngine), &engine_frontend);
 
     engine_frontend.waitForEngineStarted();
 
