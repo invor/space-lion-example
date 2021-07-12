@@ -4,8 +4,16 @@
 #include "EngineFrontend.hpp"
 #include "OpenGL/ResourceManager.hpp"
 
+#include "AtmosphereComponentManager.hpp"
+#include "CameraComponent.hpp"
+#include "gltfAssetComponentManager.hpp"
+#include "MaterialComponentManager.hpp"
+#include "MeshComponentManager.hpp"
 #include "PointlightComponent.hpp"
+#include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
+#include "TransformComponentManager.hpp"
+#include "TurntableComponentManager.hpp"
 
 #include "..\Editor\CameraController.hpp"
 
@@ -13,13 +21,14 @@
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::OpenGL::ResourceManager& resource_manager)
 {
     auto& entity_mngr = world_state.accessEntityManager();
+    auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
     auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
     auto& rsrc_mngr = resource_manager;
-    auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager>();
+    auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
     auto& sunlight_mngr = world_state.get<EngineCore::Graphics::SunlightComponentManager>();
     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
@@ -33,20 +42,21 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     transform_mngr.addComponent(sun_entity, Vec3(105783174465.5f, 105783174465.5f, 5783174465.5f), Quat(), Vec3(1.0f));
     sunlight_mngr.addComponent(sun_entity, Vec3(1.0f), 3.75f * std::pow(10.0f, 28.0f), 696342000.0f);
 
-    //TODO create turntable animation
-    //auto cube = entity_mngr.create();
-    //transform_mngr.addComponent(cube, Vec3(0.0, 0.0, -5.0));
-    //turntable_mngr.addComponent(cube, 0.5f);
-    //auto mesh_data = Graphics::createBox();
-    //auto mesh_rsrc = mesh_mngr.addComponent(
-    //    cube,
-    //    "demo_plane",
-    //    std::get<0>(mesh_data),
-    //    std::get<1>(mesh_data),
-    //    std::make_shared<glowl::VertexLayout>(rsrc_mngr.convertGenericGltfVertexLayout(*std::get<2>(mesh_data))),
-    //    GL_UNSIGNED_INT,
-    //    GL_TRIANGLES);
-
+    Entity atmoshphere_entity = entity_mngr.create();
+    //transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6361000.0, 0.0), Quat(), Vec3(6961000.0)); // check the correct size for the earth's atmosphere
+    transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6360005.0, 0.0), Quat(), Vec3(6800000.0)); // check the correct size for the earth's atmosphere
+    atmosphere_mngr.addComponent(atmoshphere_entity,
+        //Vec3(0.0058,0.0135,0.0331),
+        //Vec3(0.00444,0.00444,0.00444),
+        Vec3(0.0000058, 0.0000135, 0.0000331),
+        //Vec3(0.00000444, 0.00000444, 0.00000444),
+        Vec3(0.000003, 0.000003, 0.000003),
+        //Vec3(0.00002,0.00002,0.00002),
+        8000.0,
+        1200.0,
+        6360000.0,
+        //6359800.0,
+        6420000.0);
 
     // Create "no-texture" debugging textures
     {
@@ -55,6 +65,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.width = 1;
         layout.height = 1;
         layout.depth = 1;
+        layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
         layout.internal_format = 0x8058;// GL_RGBA8
@@ -76,6 +87,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.width = 1;
         layout.height = 1;
         layout.depth = 1;
+        layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
         layout.internal_format = 0x8058;// GL_RGBA8
@@ -97,6 +109,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.width = 1;
         layout.height = 1;
         layout.depth = 1;
+        layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
         layout.internal_format = 0x8058;// GL_RGBA8
@@ -126,78 +139,84 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         shader_names
     );
 
-    //mtl_mngr.addComponent(cube, "debug_cube_material", shader_rsrc);
+    auto skinned_mesh_shader_names = std::make_shared<std::vector<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>>(
+        std::initializer_list<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>{
+            { "../space-lion/resources/shaders/skinned_mesh_notx_v.glsl", glowl::GLSLProgram::ShaderType::Vertex },
+            { "../space-lion/resources/shaders/skinned_mesh_notx_f.glsl", glowl::GLSLProgram::ShaderType::Fragment }
+    });
 
-    //renderTask_mngr.addComponent(cube, mesh_rsrc, 0, shader_rsrc, 0);
+    auto skinned_mesh_shader_rsrc = rsrc_mngr.createShaderProgramAsync(
+        "skinned_mesh_shader",
+        skinned_mesh_shader_names
+    );
 
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            for (int z = -1; z <= 1; ++z)
-            {
-                auto gltf_root = entity_mngr.create();
-                transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
-                turntable_mngr.addComponent(gltf_root, 0.5f);
+    //for (int x = -1; x <= 1; ++x)
+    //{
+    //    for (int y = -1; y <= 1; ++y)
+    //    {
+    //        for (int z = -1; z <= 1; ++z)
+    //        {
+    //            auto gltf_root = entity_mngr.create();
+    //            transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
+    //            turntable_mngr.addComponent(gltf_root, 0.5f);
+    //
+    //            //{
+    //            //    auto gltf_subobj = entity_mngr.create();
+    //            //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //            //    transform_mngr.setParent(transform_idx, gltf_root);
+    //            //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", "Avocado", shader_rsrc);
+    //            //}
+    //
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Hose_low", shader_rsrc);
+    //            }
+    //            
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "RubberWood_low", shader_rsrc);
+    //            }
+    //            
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "GlassPlastic_low", shader_rsrc);
+    //            }
+    //            
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "MetalParts_low", shader_rsrc);
+    //            }
+    //            
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "LeatherParts_low", shader_rsrc);
+    //            }
+    //            
+    //            {
+    //                auto gltf_subobj = entity_mngr.create();
+    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+    //                transform_mngr.setParent(transform_idx, gltf_root);
+    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Lenses_low", shader_rsrc);
+    //            }
+    //        }
+    //    }
+    //}
 
-                {
-                    auto gltf_subobj = entity_mngr.create();
-                    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                    transform_mngr.setParent(transform_idx, gltf_root);
-                    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", "Avocado", shader_rsrc);
-                }
-
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Hose_low", shader_rsrc);
-                //}
-                //
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "RubberWood_low", shader_rsrc);
-                //}
-                //
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "GlassPlastic_low", shader_rsrc);
-                //}
-                //
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "MetalParts_low", shader_rsrc);
-                //}
-                //
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "LeatherParts_low", shader_rsrc);
-                //}
-                //
-                //{
-                //    auto gltf_subobj = entity_mngr.create();
-                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-                //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Lenses_low", shader_rsrc);
-                //}
-            }
-        }
-    }
-
-   
-
-    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
-
-    // gltf_mngr.importGltfScene("C:/Users/Invor/Downloads/rungholt/gltf/rungholt.gltf", shader_rsrc);
-
+    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
+    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/OrientationTest/glTF/OrientationTest.gltf", shader_rsrc);
+    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/RiggedFigure/glTF/RiggedFigure.gltf", skinned_mesh_shader_rsrc);
+    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/CesiumMan/glTF/CesiumMan.gltf", skinned_mesh_shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/rungholt/rungholt.gltf", shader_rsrc);
 }
 
 
