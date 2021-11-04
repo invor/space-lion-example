@@ -27,7 +27,7 @@ public:
     /**
      * Grant access to frame data for the "driving" part of the application, e.g. editor, game, simulation etc.
      */
-    EngineCore::Common::FrameManager& accessFrameManager();
+    EngineCore::Common::FrameManager<EngineCore::Common::Frame>& accessFrameManager();
 
     /**
      * Grant access to gpu resources for the "driving" part of the application, e.g. editor, game, simulation etc.
@@ -52,7 +52,7 @@ private:
     /**
      * The frame manager used to carry over snapshots of the world simulation to rendering.
      */
-    std::unique_ptr<EngineCore::Common::FrameManager> m_frame_manager;
+    std::unique_ptr<EngineCore::Common::FrameManager<EngineCore::Common::Frame>> m_frame_manager;
 
     /**
      * Graphics backend used for rendering.

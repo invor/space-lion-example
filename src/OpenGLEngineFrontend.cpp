@@ -25,7 +25,7 @@
         OpenGLEngineFrontend::OpenGLEngineFrontend()
             : m_engine_started(false),
             m_task_schedueler(std::make_unique<EngineCore::Utility::TaskSchedueler>()),
-            m_frame_manager(std::make_unique<EngineCore::Common::FrameManager>()),
+            m_frame_manager(std::make_unique<EngineCore::Common::FrameManager<EngineCore::Common::Frame>>()),
             m_graphics_backend(std::make_unique<EngineCore::Graphics::OpenGL::GraphicsBackend>()),
             m_resource_manager(std::make_unique<EngineCore::Graphics::OpenGL::ResourceManager>()),
             m_world_state(std::make_unique<EngineCore::WorldState>())
@@ -183,7 +183,7 @@
             return (*m_world_state.get());
         }
 
-        EngineCore::Common::FrameManager & OpenGLEngineFrontend::accessFrameManager()
+        EngineCore::Common::FrameManager<EngineCore::Common::Frame>& OpenGLEngineFrontend::accessFrameManager()
         {
             return (*m_frame_manager.get());
         }
