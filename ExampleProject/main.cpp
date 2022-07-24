@@ -42,6 +42,10 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     transform_mngr.addComponent(sun_entity, Vec3(105783174465.5f, 105783174465.5f, 5783174465.5f), Quat(), Vec3(1.0f));
     sunlight_mngr.addComponent(sun_entity, Vec3(1.0f), 3.75f * std::pow(10.0f, 28.0f), 696342000.0f);
 
+    Entity pointlight_entity = entity_mngr.create();
+    transform_mngr.addComponent(pointlight_entity, Vec3(0.0f, 2.0f, 0.0f), Quat(), Vec3(1.0f));
+    pointlight_mngr.addComponent(pointlight_entity, Vec3(1.0f), 2000.0f, 100.0f);
+
     Entity atmoshphere_entity = entity_mngr.create();
     //transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6361000.0, 0.0), Quat(), Vec3(6961000.0)); // check the correct size for the earth's atmosphere
     transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6360005.0, 0.0), Quat(), Vec3(6800000.0)); // check the correct size for the earth's atmosphere
@@ -212,11 +216,24 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     //    }
     //}
 
-    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
-    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/OrientationTest/glTF/OrientationTest.gltf", shader_rsrc);
-    gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/RiggedFigure/glTF/RiggedFigure.gltf", skinned_mesh_shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/Main/NewSponza_Main_Blender_glTF.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/OrientationTest/glTF/OrientationTest.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/RiggedFigure/glTF/RiggedFigure.gltf", skinned_mesh_shader_rsrc);
+    gltf_mngr.importGltfScene("C:/Users/micha/Downloads/potted_plant_01_4k.gltf/potted_plant_01_4k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/wine_barrel_01_4k.gltf/wine_barrel_01_4k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/brass_vase_04_4k.gltf/brass_vase_04_4k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/korean_public_payphone_01_8k.gltf/korean_public_payphone_01_8k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/alarm_clock_01_4k.gltf/alarm_clock_01_4k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CherryBlossoms/CherryBlossoms.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/pz_iv_g.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/JAPANESE_PACK_FINAL/temple_main.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CG-Scene/the_scene/scene.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/CesiumMan/glTF/CesiumMan.gltf", skinned_mesh_shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/rungholt/rungholt.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/scifi_girl_v.01/scene.gltf", shader_rsrc);
+
+    //gltf_mngr.clearModelCache();
 }
 
 
@@ -231,11 +248,10 @@ int main() {
     auto& world_state = engine_frontend.accessWorldState();
     auto& resource_manager = engine_frontend.accessResourceManager();
 
-    createDemoScene(world_state, resource_manager);
-
-    Editor::Controls::CameraController cam_ctrl(engine_frontend.accessWorldState(),engine_frontend.accessFrameManager());
-
+    Editor::Controls::CameraController cam_ctrl(engine_frontend.accessWorldState(), engine_frontend.accessFrameManager());
     engine_frontend.addInputActionContext(cam_ctrl.getInputActionContext());
+
+    createDemoScene(world_state, resource_manager);
 
     engine_thread.join();
 

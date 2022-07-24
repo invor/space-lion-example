@@ -12,6 +12,8 @@
 #include "OpenGL/BasicRenderingPipeline.hpp"
 #include "GeometryBakery.hpp"
 #include "gltfAssetComponentManager.hpp"
+//#include "LandscapeFeatureCurveComponent.hpp"
+//#include "LandscapeBrickComponent.hpp"
 #include "MeshComponentManager.hpp"
 #include "NameComponentManager.hpp"
 #include "PointlightComponent.hpp"
@@ -31,7 +33,7 @@
             m_world_state(std::make_unique<EngineCore::WorldState>())
         {
             m_world_state->add<EngineCore::Physics::AirplanePhysicsComponentManager>(std::make_unique<EngineCore::Physics::AirplanePhysicsComponentManager>(128, *m_world_state.get()));
-            m_world_state->add<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(8, *m_resource_manager.get() ));
+            m_world_state->add<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(8, *m_resource_manager.get()));
             m_world_state->add<EngineCore::Graphics::CameraComponentManager>(std::make_unique<EngineCore::Graphics::CameraComponentManager>(8));
             m_world_state->add<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_resource_manager.get(), *m_world_state.get()));
             m_world_state->add<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(m_resource_manager.get()));
@@ -44,6 +46,7 @@
             m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>(250000));
             m_world_state->add<EngineCore::Animation::TurntableComponentManager>(std::make_unique<EngineCore::Animation::TurntableComponentManager>());
             m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
+            //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
 
             m_world_state->add([](EngineCore::WorldState& world_state, double dt) {
                     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
@@ -127,7 +130,7 @@
                 EngineCore::Common::Frame new_frame;
 
                 new_frame.m_frameID = frameID++;
-                new_frame.m_dt = dt;
+                new_frame.m_simulation_dt = dt;
 
                 auto window_res = m_graphics_backend->getActiveWindowResolution();
 
