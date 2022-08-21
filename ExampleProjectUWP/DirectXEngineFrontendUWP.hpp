@@ -3,18 +3,54 @@
 
 #include <memory>
 
+#include "pch.h"
+#include "DeviceResources.h"
+
 #include "Frame.hpp"
 #include "Dx11/ResourceManager.hpp"
+#include "InputEvent.hpp"
 #include "TaskSchedueler.hpp"
 #include "WorldState.hpp"
 
-class DirectXEngineFrontendUWP
+class DirectXEngineFrontendUWP : public DX::IDeviceNotify
 {
 public:
-    DirectXEngineFrontendUWP() = default;
+    DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceResources>  const& device_resources);
     ~DirectXEngineFrontendUWP() = default;
 
+    void init(::IUnknown* window, int width, int height, DXGI_MODE_ROTATION rotation);
+
+    void run();
+
+    // IDeviceNotify
+    void OnDeviceLost() override;
+    void OnDeviceRestored() override;
+
+    /**
+     * Grant access to world for the "driving" part of the application, e.g. editor, game, simulation etc.
+     */
+    EngineCore::WorldState& accessWorldState();
+
+    /**
+     * Grant access to frame data for the "driving" part of the application, e.g. editor, game, simulation etc.
+     */
+    EngineCore::Common::FrameManager<EngineCore::Common::Frame>& accessFrameManager();
+
+    /**
+     * Grant access to gpu resources for the "driving" part of the application, e.g. editor, game, simulation etc.
+     */
+    EngineCore::Graphics::Dx11::ResourceManager& accessResourceManager();
+
+    /**
+     * Pass on an input action context to window handling in graphics backend
+     */
+    void addInputActionContext(EngineCore::Common::Input::InputActionContext const& input_action_context);
+
 private:
+
+    void CreateDeviceDependentResources();
+
+    void CreateWindowSizeDependentResources();
 
     // Simple multi-thread task schedueler
     std::unique_ptr<EngineCore::Utility::TaskSchedueler> m_task_schedueler;
@@ -27,6 +63,9 @@ private:
 
     // Collection of all component manager that make up the world (state)
     std::unique_ptr<EngineCore::WorldState> m_world_state;
+
+    // DirectX device resources
+    std::shared_ptr<DX::DeviceResources> m_device_resources;
 
 };
 
