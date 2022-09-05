@@ -13,11 +13,15 @@ class OpenGLEngineFrontend
 {
 public:
     OpenGLEngineFrontend();
-    ~OpenGLEngineFrontend() = default;
+    ~OpenGLEngineFrontend();
 
     void startEngine();
 
     void waitForEngineStarted();
+
+    void update(size_t update_frameID, double dt, int window_width, int window_height);
+
+    void render(size_t render_frameID, double dt, int window_width, int window_height);
 
     /**
      * Grant access to world for the "driving" part of the application, e.g. editor, game, simulation etc.

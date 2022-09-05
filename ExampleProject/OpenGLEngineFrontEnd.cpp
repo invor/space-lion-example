@@ -23,6 +23,8 @@
 
 #include "InputEvent.hpp"
 
+#include <GLFW/glfw3.h>
+
 
         OpenGLEngineFrontend::OpenGLEngineFrontend()
             : m_engine_started(false),
@@ -54,6 +56,14 @@
                     EngineCore::Animation::animateTurntables(transform_mngr,turntable_mngr,dt);
                 }
             );
+
+            // start task schedueler with 1 thread
+            m_task_schedueler->run(1);
+        }
+
+        OpenGLEngineFrontend::~OpenGLEngineFrontend()
+        {
+            m_task_schedueler->stop();
         }
 
         void OpenGLEngineFrontend::startEngine()
@@ -70,7 +80,7 @@
             //auto render_exec_status = render_exec.wait_for(std::chrono::microseconds(0));
 
             // start task schedueler with 1 thread
-            m_task_schedueler->run(1);
+            //m_task_schedueler->run(1);
 
             auto t_0 = std::chrono::high_resolution_clock::now();
             auto t_1 = std::chrono::high_resolution_clock::now();
@@ -179,6 +189,114 @@
         {
             std::unique_lock<std::mutex> lk(m_engine_started_mutex);
             m_engine_started_cVar.wait(lk, [this] {return m_engine_started; });
+        }
+
+        void OpenGLEngineFrontend::update(size_t udpate_frameID, double dt, int window_width, int window_height)
+        {
+            // update world
+            auto active_systems = m_world_state->getSystems();
+            for (auto& system : active_systems)
+            {
+                auto& world_state = *m_world_state.get();
+                m_task_schedueler->submitTask(
+                    [&world_state, dt, system]() {
+                        system(world_state, dt);
+                    }
+                );
+            }
+
+            // TODO wait for world updates to finish...
+
+            // finalize engine update by creating a new frame
+            EngineCore::Common::Frame new_frame;
+
+            new_frame.m_frameID = udpate_frameID;
+            new_frame.m_simulation_dt = dt;
+            new_frame.m_window_width = window_width;
+            new_frame.m_window_height = window_height;
+
+            auto& camera_mngr = m_world_state->get<EngineCore::Graphics::CameraComponentManager>();
+            auto& entity_mngr = m_world_state->accessEntityManager();
+            auto& transform_mngr = m_world_state->get<EngineCore::Common::TransformComponentManager>();
+
+            Entity camera_entity = camera_mngr.getActiveCamera();
+
+            if (camera_entity != entity_mngr.invalidEntity())
+            {
+                auto camera_idx = camera_mngr.getIndex(camera_entity).front();
+
+                size_t camera_transform_idx = transform_mngr.getIndex(camera_entity);
+                new_frame.m_view_matrix = glm::inverse(transform_mngr.getWorldTransformation(camera_transform_idx));
+                new_frame.m_projection_matrix = camera_mngr.getProjectionMatrix(camera_idx);
+                new_frame.m_fovy = camera_mngr.getFovy(camera_idx);
+                new_frame.m_aspect_ratio = camera_mngr.getAspectRatio(camera_idx);
+                new_frame.m_exposure = camera_mngr.getExposure(camera_idx);
+
+                EngineCore::Common::Frame& update_frame = m_frame_manager->setUpdateFrame(std::move(new_frame));
+
+                //Graphics::OpenGL::setupBasicForwardRenderingPipeline(update_frame, *m_world_state, *m_resource_manager);
+                EngineCore::Graphics::OpenGL::setupBasicDeferredRenderingPipeline(update_frame, *m_world_state, *m_resource_manager);
+                
+                m_frame_manager->swapUpdateFrame();
+            }
+        }
+
+        void OpenGLEngineFrontend::render(size_t render_frameID, double dt, int window_width, int window_height)
+        {
+            // Perform single execution tasks
+            //processSingleExecutionTasks();
+
+            auto gl_err = glGetError();
+            if (gl_err != GL_NO_ERROR)
+                std::cerr << "GL error after single exection tasks: " << gl_err << std::endl;
+
+            // Perform resource manager async tasks
+            m_resource_manager->executeRenderThreadTasks();
+
+            gl_err = glGetError();
+            if (gl_err != GL_NO_ERROR)
+                std::cerr << "GL error after resource manager tasks: " << gl_err << std::endl;
+
+            // TODO try getting update for render frame ?
+            
+            // Get current frame for rendering
+            auto& frame = m_frame_manager->getRenderFrame();
+
+            std::vector<double> setup_resource_timings;
+            setup_resource_timings.reserve(frame.m_render_passes.size());
+            // Call buffer phase for each render pass
+            for (auto& render_pass : frame.m_render_passes)
+            {
+                auto t0 = glfwGetTime();
+
+                render_pass.setupResources();
+
+                auto t1 = glfwGetTime();
+                setup_resource_timings.emplace_back(t1 - t0);
+            }
+
+            gl_err = glGetError();
+            if (gl_err != GL_NO_ERROR)
+                std::cerr << "GL error after resource setup of frame " << frame.m_frameID << " : " << gl_err << std::endl;
+
+            std::vector<double> render_timings;
+            render_timings.reserve(frame.m_render_passes.size());
+            // Call execution phase for each render pass
+            for (auto& render_pass : frame.m_render_passes)
+            {
+                auto t0 = glfwGetTime();
+
+                render_pass.execute();
+
+                auto t1 = glfwGetTime();
+                render_timings.emplace_back(t1 - t0);
+            }
+
+            gl_err = glGetError();
+            if (gl_err != GL_NO_ERROR)
+                std::cerr << "GL error after execution of frame " << frame.m_frameID << " : " << gl_err << std::endl;
+
+            m_frame_manager->swapRenderFrame();
         }
 
         EngineCore::WorldState & OpenGLEngineFrontend::accessWorldState()
