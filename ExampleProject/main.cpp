@@ -25,7 +25,7 @@
 #include "TransformComponentManager.hpp"
 #include "TurntableComponentManager.hpp"
 
-#include "..\Editor\CameraController.hpp"
+#include "../Editor/CameraController.hpp"
 
 
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::OpenGL::ResourceManager& resource_manager)
@@ -601,24 +601,7 @@ struct App {
 int main() {
 
     App app;
-    
     app.run();
-
-    //bOpenGLEngineFrontend engine_frontend;
-    //b
-    //bstd::thread engine_thread(&(OpenGLEngineFrontend::startEngine), &engine_frontend);
-    //b
-    //bengine_frontend.waitForEngineStarted();
-    //b
-    //bauto& world_state = engine_frontend.accessWorldState();
-    //bauto& resource_manager = engine_frontend.accessResourceManager();
-    //b
-    //bEditor::Controls::CameraController cam_ctrl(engine_frontend.accessWorldState(), engine_frontend.accessFrameManager());
-    //bengine_frontend.addInputActionContext(cam_ctrl.getInputActionContext());
-    //b
-    //bcreateDemoScene(world_state, resource_manager);
-    //b
-    //bengine_thread.join();
 
     return 0;
 }
