@@ -17,6 +17,7 @@
 #include <DirectXColors.h>
 
 #include <algorithm>
+#include <thread>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
