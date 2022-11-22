@@ -17,7 +17,7 @@
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::Dx11::ResourceManager& resource_manager)
 {
     auto& entity_mngr = world_state.accessEntityManager();
-    auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
+    //  auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
     auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
@@ -42,21 +42,21 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     transform_mngr.addComponent(pointlight_entity, Vec3(0.0f, 2.0f, 0.0f), Quat(), Vec3(1.0f));
     pointlight_mngr.addComponent(pointlight_entity, Vec3(1.0f), 2000.0f, 100.0f);
 
-    Entity atmoshphere_entity = entity_mngr.create();
-    //transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6361000.0, 0.0), Quat(), Vec3(6961000.0)); // check the correct size for the earth's atmosphere
-    transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6360005.0, 0.0), Quat(), Vec3(6800000.0)); // check the correct size for the earth's atmosphere
-    atmosphere_mngr.addComponent(atmoshphere_entity,
-        //Vec3(0.0058,0.0135,0.0331),
-        //Vec3(0.00444,0.00444,0.00444),
-        Vec3(0.0000058, 0.0000135, 0.0000331),
-        //Vec3(0.00000444, 0.00000444, 0.00000444),
-        Vec3(0.000003, 0.000003, 0.000003),
-        //Vec3(0.00002,0.00002,0.00002),
-        8000.0,
-        1200.0,
-        6360000.0,
-        //6359800.0,
-        6420000.0);
+    //  Entity atmoshphere_entity = entity_mngr.create();
+    //  //transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6361000.0, 0.0), Quat(), Vec3(6961000.0)); // check the correct size for the earth's atmosphere
+    //  transform_mngr.addComponent(atmoshphere_entity, Vec3(0.0, -6360005.0, 0.0), Quat(), Vec3(6800000.0)); // check the correct size for the earth's atmosphere
+    //  atmosphere_mngr.addComponent(atmoshphere_entity,
+    //      //Vec3(0.0058,0.0135,0.0331),
+    //      //Vec3(0.00444,0.00444,0.00444),
+    //      Vec3(0.0000058, 0.0000135, 0.0000331),
+    //      //Vec3(0.00000444, 0.00000444, 0.00000444),
+    //      Vec3(0.000003, 0.000003, 0.000003),
+    //      //Vec3(0.00002,0.00002,0.00002),
+    //      8000.0,
+    //      1200.0,
+    //      6360000.0,
+    //      //6359800.0,
+    //      6420000.0);
 
     // Create "no-texture" debugging textures
     {
@@ -253,7 +253,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/brass_vase_04_4k.gltf/brass_vase_04_4k.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/korean_public_payphone_01_8k.gltf/korean_public_payphone_01_8k.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/alarm_clock_01_4k.gltf/alarm_clock_01_4k.gltf", shader_rsrc);
-    gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CherryBlossoms/CherryBlossoms.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CherryBlossoms/CherryBlossoms.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/pz_iv_g.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/JAPANESE_PACK_FINAL/temple_main.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CG-Scene/the_scene/scene.gltf", shader_rsrc);
@@ -600,6 +600,29 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
                 );
 
                 auto window_resolution = this->getWindowResolution();
+
+                // temporarily clear render target here
+                {
+                    auto device_context = m_device_resources->GetD3DDeviceContext();
+
+                    CD3D11_VIEWPORT viewport(
+                        0.0, 0.0, (float)std::get<0>(window_resolution), (float)std::get<1>(window_resolution));
+                    device_context->RSSetViewports(1, &viewport);
+
+                    auto render_target_view = m_device_resources->GetRenderTargetView();
+                    auto depth_stencil_view = m_device_resources->GetDepthStencilView();
+
+                    const float clear_color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+                    const float clear_depth = 0.0f;
+
+                    // Clear swapchain and depth buffer. NOTE: This will clear the entire render target view, not just the specified view.
+                    device_context->ClearRenderTargetView(render_target_view, clear_color);
+                    device_context->ClearDepthStencilView(depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, clear_depth, 0);
+                    //device_context->OMSetDepthStencilState(reversedZ ? m_reversedZDepthNoStencilTest.get() : nullptr, 0);
+
+                    ID3D11RenderTargetView* renderTargets[] = { render_target_view };
+                    device_context->OMSetRenderTargets((UINT)std::size(renderTargets), renderTargets, depth_stencil_view);
+                }
 
                 m_engine_frontend->render(render_frameID++, dt, std::get<0>(window_resolution), std::get<1>(window_resolution));
 

@@ -17,7 +17,7 @@
 DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceResources>  const& device_resources)
     : m_task_schedueler(std::make_unique<EngineCore::Utility::TaskSchedueler>()),
     m_frame_manager(std::make_unique<EngineCore::Common::FrameManager<EngineCore::Common::Frame>>()),
-    m_resource_manager(std::make_unique<EngineCore::Graphics::Dx11::ResourceManager>(device_resources->GetD3DDevice(),device_resources->GetD3DDeviceContext())),
+    m_resource_manager(std::make_unique<EngineCore::Graphics::Dx11::ResourceManager>()),
     m_world_state(std::make_unique<EngineCore::WorldState>()),
     m_device_resources(device_resources)
 {
@@ -56,6 +56,7 @@ void DirectXEngineFrontendUWP::init(::IUnknown* window, int width, int height, D
 
     m_device_resources->CreateDeviceResources();
     createDeviceDependentResources();
+    m_resource_manager->init(m_device_resources->GetD3DDevice(), m_device_resources->GetD3DDeviceContext());
 
     m_device_resources->CreateWindowSizeDependentResources();
     createWindowSizeDependentResources();
