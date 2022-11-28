@@ -11,8 +11,10 @@ option(ExampleProject "Build OpenGL GLFW example project" OFF)
 
 if(ExampleProjectUWP)
    set(USE_DX11 ON CACHE BOOL "Use DirectX11 graphics backend" FORCE)
+   set(UWP ON CACHE BOOL "Compile for UWP" FORCE)
 else()
    set(USE_DX11 OFF CACHE BOOL "Use DirectX11 graphics backend" FORCE)
+   set(UWP OFF CACHE BOOL "Compile for UWP" FORCE)
 endif()
 
 if(ExampleProject)

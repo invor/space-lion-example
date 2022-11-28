@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "DirectXEngineFrontendUWP.hpp"
 #include "Dx11/ResourceManager.hpp"
+#include "ResourceLoading.hpp"
 
 #include "AtmosphereComponentManager.hpp"
 #include "CameraComponent.hpp"
@@ -148,17 +149,31 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     }
 
     auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::ShaderFilename>>();
-    shader_names->push_back({ "ms-appx:///static_mesh.vertex.cso", dxowl::ShaderProgram::VertexShader });
-    shader_names->push_back({ "ms-appx:///forward_pbr.pixel.cso", dxowl::ShaderProgram::PixelShader });
+    shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/static_mesh.vertex.cso", dxowl::ShaderProgram::VertexShader });
+    shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/forward_pbr.pixel.cso", dxowl::ShaderProgram::PixelShader });
 
-    auto vertex_descriptor = std::make_shared<std::vector<dxowl::VertexDescriptor>>();
 
-    vertex_descriptor->push_back({ 24,
-        {
-            { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-        }
-    });
+    Entity debug_entity = entity_mngr.create();
+
+    transform_mngr.addComponent(debug_entity, Vec3(0.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
+
+    auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
+    (*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+                             {-0.25f, 0.0f, 0.5f, 0.25f, 0.0f, 0.5f, 0.0f, 0.5f, 0.5f},
+                             {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
+
+    auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
+    (*triangle_indices) = { 0,1,2 };
+
+    auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
+    *vertex_layout = {
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
+    };
+
+    auto mesh_rsrc = mesh_mngr.addComponent(debug_entity, "debug_mesh", triangle_vertices, triangle_indices, vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 
     //co_await std::async(std::launch::async, []() ->std::future <void> {
     //    co_await DX::ReadDataAsync(L"ms-appx:///gltfPixelShader.cso");
@@ -168,7 +183,15 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto shader_rsrc = resource_manager.createShaderProgramAsync(
         "gltf_debug_shader",
         shader_names,
-        vertex_descriptor);
+        vertex_layout);
+
+
+    mtl_mngr.addComponent(debug_entity, "debug_material", shader_rsrc);
+
+    auto transform_cached_idx = transform_mngr.getIndex(debug_entity);
+    auto mesh_cached_idx = mesh_mngr.getIndex(debug_entity);
+    auto mtl_cached_idx = mtl_mngr.getIndex(debug_entity);
+    renderTask_mngr.addComponent(debug_entity, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
 
     //auto skinned_mesh_shader_names = std::make_shared<std::vector<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>>(
     //    std::initializer_list<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>{
@@ -419,19 +442,19 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
         m_native_orientation = currentDisplayInformation.NativeOrientation();
         m_current_orientation = currentDisplayInformation.CurrentOrientation();
 
-        int outputWidth = ConvertDipsToPixels(m_logical_width, m_DPI);
-        int outputHeight = ConvertDipsToPixels(m_logical_height, m_DPI);
+        m_pixel_width = ConvertDipsToPixels(m_logical_width, m_DPI);
+        m_pixel_height = ConvertDipsToPixels(m_logical_height, m_DPI);
 
         DXGI_MODE_ROTATION rotation = ComputeDisplayRotation(m_native_orientation, m_current_orientation);
 
         if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270)
         {
-            std::swap(outputWidth, outputHeight);
+            std::swap(m_pixel_width, m_pixel_height);
         }
 
         auto windowPtr = winrt::get_unknown(window);
 
-        m_engine_frontend->init(windowPtr, outputWidth, outputHeight, rotation);
+        m_engine_frontend->init(windowPtr, m_pixel_width, m_pixel_height, rotation);
     }
 
     void Load(winrt::hstring const& /* entryPoint */)
@@ -612,8 +635,8 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
                     auto render_target_view = m_device_resources->GetRenderTargetView();
                     auto depth_stencil_view = m_device_resources->GetDepthStencilView();
 
-                    const float clear_color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-                    const float clear_depth = 0.0f;
+                    const float clear_color[4] = { 1.0f, 0.2f, 0.4f, 1.0f };
+                    const float clear_depth = 1.0f;
 
                     // Clear swapchain and depth buffer. NOTE: This will clear the entire render target view, not just the specified view.
                     device_context->ClearRenderTargetView(render_target_view, clear_color);
