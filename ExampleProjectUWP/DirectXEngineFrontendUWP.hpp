@@ -6,7 +6,7 @@
 #include "pch.h"
 #include "DeviceResources.h"
 
-#include "Frame.hpp"
+#include "Dx11/Dx11Frame.hpp"
 #include "Dx11/ResourceManager.hpp"
 #include "InputEvent.hpp"
 #include "TaskSchedueler.hpp"
@@ -36,7 +36,7 @@ public:
     /**
      * Grant access to frame data for the "driving" part of the application, e.g. editor, game, simulation etc.
      */
-    EngineCore::Common::FrameManager<EngineCore::Common::Frame>& accessFrameManager();
+    EngineCore::Common::FrameManager<EngineCore::Graphics::Dx11::Frame>& accessFrameManager();
 
     /**
      * Grant access to gpu resources for the "driving" part of the application, e.g. editor, game, simulation etc.
@@ -58,7 +58,7 @@ private:
     std::unique_ptr<EngineCore::Utility::TaskSchedueler>                         m_task_schedueler;
 
     // The frame manager used to carry over snapshots of the world simulation to rendering.
-    std::unique_ptr<EngineCore::Common::FrameManager<EngineCore::Common::Frame>> m_frame_manager;
+    std::unique_ptr<EngineCore::Common::FrameManager<EngineCore::Graphics::Dx11::Frame>> m_frame_manager;
 
     // GPU resource manager
     std::unique_ptr<EngineCore::Graphics::Dx11::ResourceManager>                 m_resource_manager;

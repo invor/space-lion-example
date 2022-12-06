@@ -7,6 +7,7 @@
 #include "AtmosphereComponentManager.hpp"
 #include "CameraComponent.hpp"
 #include "gltfAssetComponentManager.hpp"
+#include "NameComponentManager.hpp"
 #include "MaterialComponentManager.hpp"
 #include "MeshComponentManager.hpp"
 #include "PointlightComponent.hpp"
@@ -23,6 +24,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
+    auto& name_mngr = world_state.get<EngineCore::Common::NameComponentManager>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
     auto& rsrc_mngr = resource_manager;
     auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
@@ -31,7 +33,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
 
     auto camera = entity_mngr.create();
-    transform_mngr.addComponent(camera, Vec3(0.0, 0.0, 2.5));
+    transform_mngr.addComponent(camera, Vec3(0.0, 0.0, 10.0));
     camera_mngr.addComponent(camera);
     camera_mngr.setActiveCamera(camera);
 
@@ -156,10 +158,11 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     Entity debug_entity = entity_mngr.create();
 
     transform_mngr.addComponent(debug_entity, Vec3(0.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
+    turntable_mngr.addComponent(debug_entity, 0.5f);
 
     auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
     (*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
-                             {-0.25f, 0.0f, 0.5f, 0.25f, 0.0f, 0.5f, 0.0f, 0.5f, 0.5f},
+                             {-0.25f, 0.0f, 0.0f, 0.25f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f},
                              {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
 
     auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
@@ -265,6 +268,9 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     //        }
     //    }
     //}
+
+    //gltf_mngr.importGltfScene(EngineCore::Utility::GetAppFolder().string() + "Resources/Duck.gltf", shader_rsrc);
+
 
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/Main/NewSponza_Main_Blender_glTF.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
@@ -624,29 +630,6 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
 
                 auto window_resolution = this->getWindowResolution();
 
-                // temporarily clear render target here
-                {
-                    auto device_context = m_device_resources->GetD3DDeviceContext();
-
-                    CD3D11_VIEWPORT viewport(
-                        0.0, 0.0, (float)std::get<0>(window_resolution), (float)std::get<1>(window_resolution));
-                    device_context->RSSetViewports(1, &viewport);
-
-                    auto render_target_view = m_device_resources->GetRenderTargetView();
-                    auto depth_stencil_view = m_device_resources->GetDepthStencilView();
-
-                    const float clear_color[4] = { 1.0f, 0.2f, 0.4f, 1.0f };
-                    const float clear_depth = 1.0f;
-
-                    // Clear swapchain and depth buffer. NOTE: This will clear the entire render target view, not just the specified view.
-                    device_context->ClearRenderTargetView(render_target_view, clear_color);
-                    device_context->ClearDepthStencilView(depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, clear_depth, 0);
-                    //device_context->OMSetDepthStencilState(reversedZ ? m_reversedZDepthNoStencilTest.get() : nullptr, 0);
-
-                    ID3D11RenderTargetView* renderTargets[] = { render_target_view };
-                    device_context->OMSetRenderTargets((UINT)std::size(renderTargets), renderTargets, depth_stencil_view);
-                }
-
                 m_engine_frontend->render(render_frameID++, dt, std::get<0>(window_resolution), std::get<1>(window_resolution));
 
                 m_device_resources->Present();
@@ -686,6 +669,7 @@ private:
             std::swap(m_pixel_width, m_pixel_height);
         }
 
+        m_device_resources->WindowSizeChanged(m_pixel_width, m_pixel_height, rotation);
         //m_game->OnWindowSizeChanged(outputWidth, outputHeight, rotation);
         //TODO
     }
