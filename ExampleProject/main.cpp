@@ -19,6 +19,7 @@
 #include "gltfAssetComponentManager.hpp"
 #include "MaterialComponentManager.hpp"
 #include "MeshComponentManager.hpp"
+#include "OceanComponent.hpp"
 #include "PointlightComponent.hpp"
 #include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
@@ -36,6 +37,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& ocean_mngr = world_state.get<OceanComponentManager>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
     auto& rsrc_mngr = resource_manager;
     auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
@@ -72,6 +74,10 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         //6359800.0,
         6420000.0);
 
+    Entity ocean_entity = entity_mngr.create();
+    transform_mngr.addComponent(ocean_entity, Vec3(0.0, 512, 0.0), Quat(), Vec3(1.0));
+    ocean_mngr.addComponent(ocean_entity, 50.0f, 512.0, 512);
+
     // Create "no-texture" debugging textures
     {
         GenericTextureLayout layout;
@@ -82,7 +88,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
-        layout.internal_format = 0x8058;// GL_RGBA8
+        layout.internal_format = GenericTextureLayout::InternalFormat::RGBA8;// 0x8058;// GL_RGBA8
 
         auto APIlayout = resource_manager.convertGenericTextureLayout(layout);
 
@@ -104,7 +110,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
-        layout.internal_format = 0x8058;// GL_RGBA8
+        layout.internal_format = GenericTextureLayout::InternalFormat::RGBA8;//0x8058;// GL_RGBA8
     
         auto APIlayout = resource_manager.convertGenericTextureLayout(layout);
     
@@ -126,7 +132,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         layout.levels = 1;
         layout.type = 0x1401; // GL_UNSIGNED_BYTE;
         layout.format = 0x1908; // GL_RGBA, apparently tinygltf enforces 4 components for better vulkan compability anyway
-        layout.internal_format = 0x8058;// GL_RGBA8
+        layout.internal_format = GenericTextureLayout::InternalFormat::RGBA8;//0x8058;// GL_RGBA8
     
         auto APIlayout = resource_manager.convertGenericTextureLayout(layout);
     
@@ -163,73 +169,74 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         skinned_mesh_shader_names
     );
 
-    //for (int x = -1; x <= 1; ++x)
-    //{
-    //    for (int y = -1; y <= 1; ++y)
-    //    {
-    //        for (int z = -1; z <= 1; ++z)
-    //        {
-    //            auto gltf_root = entity_mngr.create();
-    //            transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
-    //            turntable_mngr.addComponent(gltf_root, 0.5f);
-    //
-    //            //{
-    //            //    auto gltf_subobj = entity_mngr.create();
-    //            //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //            //    transform_mngr.setParent(transform_idx, gltf_root);
-    //            //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", "Avocado", shader_rsrc);
-    //            //}
-    //
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Hose_low", shader_rsrc);
-    //            }
-    //            
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "RubberWood_low", shader_rsrc);
-    //            }
-    //            
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "GlassPlastic_low", shader_rsrc);
-    //            }
-    //            
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "MetalParts_low", shader_rsrc);
-    //            }
-    //            
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "LeatherParts_low", shader_rsrc);
-    //            }
-    //            
-    //            {
-    //                auto gltf_subobj = entity_mngr.create();
-    //                size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
-    //                transform_mngr.setParent(transform_idx, gltf_root);
-    //                gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Lenses_low", shader_rsrc);
-    //            }
-    //        }
-    //    }
-    //}
+    for (int x = -10; x <= 10; ++x)
+    {
+        for (int y = -10; y <= 10; ++y)
+        {
+            for (int z = -10; z <= 10; ++z)
+            {
+                //auto gltf_root = entity_mngr.create();
+                //transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
+                //turntable_mngr.addComponent(gltf_root, 0.5f);
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", "Avocado", shader_rsrc);
+                //}
+    
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Hose_low", shader_rsrc);
+                //}
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "RubberWood_low", shader_rsrc);
+                //}
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "GlassPlastic_low", shader_rsrc);
+                //}
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "MetalParts_low", shader_rsrc);
+                //}
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "LeatherParts_low", shader_rsrc);
+                //}
+                //
+                //{
+                //    auto gltf_subobj = entity_mngr.create();
+                //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
+                //    transform_mngr.setParent(transform_idx, gltf_root);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", "Lenses_low", shader_rsrc);
+                //}
+            }
+        }
+    }
 
-    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/Main/NewSponza_Main_Blender_glTF.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CairoStreets/uploads_files_3389791_Cairo_Streets_Night.glb", shader_rsrc);
+    //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/OrientationTest/glTF/OrientationTest.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/RiggedFigure/glTF/RiggedFigure.gltf", skinned_mesh_shader_rsrc);
-    gltf_mngr.importGltfScene("C:/Users/micha/Downloads/potted_plant_01_4k.gltf/potted_plant_01_4k.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/potted_plant_01_4k.gltf/potted_plant_01_4k.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/carved_wooden_elephant_1k.blend/carved_wooden_elephant_1k.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/wine_barrel_01_4k.gltf/wine_barrel_01_4k.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/brass_vase_04_4k.gltf/brass_vase_04_4k.gltf", shader_rsrc);
@@ -268,7 +275,7 @@ struct App {
         m_window_height = 900;
         //m_active_window = glfwCreateWindow(1920, 1080, "Space-Lion", glfwGetPrimaryMonitor(), NULL);
 #else
-        //m_active_window = glfwCreateWindow(1920, 1080, "Space-Lion", glfwGetPrimaryMonitor(), NULL);
+        //m_active_window = glfwCreateWindow(1920, 1080, "Space-Lion", glfwGetPrimaryMonitor('), NULL);
         m_active_window = glfwCreateWindow(1280, 720, "Space-Lion", NULL, NULL);
         m_window_width = 1280;
         m_window_height = 720;
@@ -362,8 +369,9 @@ struct App {
             auto& resource_manager = m_engine_frontend->accessResourceManager();
             auto& frame_manager = m_engine_frontend->accessFrameManager();
 
-            Editor::Controls::CameraController cam_ctrl(world_state, frame_manager);
-            m_input_action_contexts.push_back(cam_ctrl.getInputActionContext());
+            Editor::Controls::CameraController cam_ctrl(world_state);
+            m_input_action_contexts.push_back(cam_ctrl.getKeyboardInputActionContext());
+            m_input_action_contexts.push_back(cam_ctrl.getGamepadInputActionContext());
             //m_engine_frontend->addInputActionContext(cam_ctrl.getInputActionContext());
             createDemoScene(world_state, resource_manager);
 
@@ -413,6 +421,8 @@ struct App {
 
             while (!glfwWindowShouldClose(m_active_window))
             {
+                auto orig_imgui_ctx = ImGui::GetCurrentContext();
+
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
@@ -429,7 +439,7 @@ struct App {
                 frame.m_render_frameID = render_frameID;
                 frame.m_render_dt = dt;
 
-                processInputActions();
+                processInputActions(dt);
 
                 m_engine_frontend->render(render_frameID++, dt, width, height);
 
@@ -445,6 +455,34 @@ struct App {
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+
+                // create temporary imgui context
+                //auto orig_imgui_ctx = ImGui::GetCurrentContext();
+                auto imgui_ctx = ImGui::CreateContext(ImGui::GetFont()->ContainerAtlas);
+                ImGui::SetCurrentContext(imgui_ctx);
+                ImGuiIO& io = ImGui::GetIO(); (void)io;
+                if (!ImGui_ImplGlfw_InitForOpenGL(m_active_window, false))
+                    std::cerr << "Error during imgui init " << std::endl;
+                ImGui_ImplOpenGL3_Init("#version 450");
+
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+
+                // create imgui/implot elements
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                bool window_status = ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::End();
+
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+                // delete temporary imgui context, reset to original imgui context
+                ImGui::DestroyContext(imgui_ctx);
+                ImGui::SetCurrentContext(orig_imgui_ctx);
+
                 glfwSwapBuffers(m_active_window);
                 glfwPollEvents();
             }
@@ -456,8 +494,8 @@ struct App {
         auto engine_render_exec = std::async(std::launch::deferred, engine_render_loop).share();
 
         auto perf_crunch_0 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
-        auto perf_crunch_1 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
-        auto perf_crunch_2 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
+        //auto perf_crunch_1 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
+        //auto perf_crunch_2 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
 
         // Start and run engine update in seperate thread
         auto engine_update_exec = std::async(std::launch::async, engine_update_loop, engine_render_exec);
@@ -474,7 +512,7 @@ struct App {
         return { m_window_width,m_window_height };
     }
 
-    void processInputActions()
+    void processInputActions(float dt)
     {
         for (auto& input_context : m_input_action_contexts)
         {
@@ -511,10 +549,34 @@ struct App {
                                 states.emplace_back(glfwGetMouseButton(m_active_window, std::get<1>(part)) == GLFW_PRESS ? 1.0f : 0.0f);
                             }
                         }
+                        else if (std::get<0>(part) == EngineCore::Common::Input::Device::GAMEPAD_AXES)
+                        {
+                            if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1))
+                            {
+                                GLFWgamepadstate state;
+
+                                if (glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
+                                {
+                                    if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_LEFT_X) {
+                                        states.emplace_back(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]);
+                                    }
+                                    else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_LEFT_Y) {
+                                        states.emplace_back(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
+                                    }
+                                    else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_RIGHT_X) {
+                                        states.emplace_back(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
+                                    }
+                                    else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_RIGHT_Y) {
+                                        states.emplace_back(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
+                                    }
+                                }
+                            }
+                        }
                     }
 
-                    state_action.m_action(state_action.m_state_query, states);
-
+                    if (!states.empty()) {
+                        state_action.m_action(state_action.m_state_query, states, dt);
+                    }
                 }
             }
         }

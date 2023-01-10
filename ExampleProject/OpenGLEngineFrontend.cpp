@@ -16,6 +16,7 @@
 //#include "LandscapeBrickComponent.hpp"
 #include "MeshComponentManager.hpp"
 #include "NameComponentManager.hpp"
+#include "OceanComponent.hpp"
 #include "PointlightComponent.hpp"
 #include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
@@ -41,6 +42,7 @@
             m_world_state->add<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(m_resource_manager.get()));
             m_world_state->add<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(m_resource_manager.get()));
             m_world_state->add<EngineCore::Common::NameComponentManager>(std::make_unique<EngineCore::Common::NameComponentManager>());
+            m_world_state->add<OceanComponentManager>(std::make_unique<OceanComponentManager>());
             m_world_state->add<EngineCore::Graphics::PointlightComponentManager>(std::make_unique<EngineCore::Graphics::PointlightComponentManager>(16000));
             m_world_state->add<EngineCore::Graphics::SunlightComponentManager>(std::make_unique<EngineCore::Graphics::SunlightComponentManager>(1));
             m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>());
