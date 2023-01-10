@@ -4,8 +4,13 @@
 #include "Dx11/ResourceManager.hpp"
 #include "ResourceLoading.hpp"
 
+#include <imgui.h>
+#include <examples/imgui_impl_dx11.h>
+#include "imgui_impl_uwp.h"
+
 #include "AtmosphereComponentManager.hpp"
 #include "CameraComponent.hpp"
+#include "CameraController.hpp"
 #include "gltfAssetComponentManager.hpp"
 #include "NameComponentManager.hpp"
 #include "MaterialComponentManager.hpp"
@@ -27,7 +32,8 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& name_mngr = world_state.get<EngineCore::Common::NameComponentManager>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
     auto& rsrc_mngr = resource_manager;
-    auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
+    auto& staticMesh_renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
+    auto& unlit_renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager < EngineCore::Graphics::RenderTaskTags::Unlit>>();
     auto& sunlight_mngr = world_state.get<EngineCore::Graphics::SunlightComponentManager>();
     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
@@ -163,6 +169,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
     (*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
                              {-0.25f, 0.0f, 0.0f, 0.25f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f},
+                             {1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
                              {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
 
     auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
@@ -172,29 +179,100 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     *vertex_layout = {
         EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
         EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
-        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{16, {{"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 3, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
     };
 
     auto mesh_rsrc = mesh_mngr.addComponent(debug_entity, "debug_mesh", triangle_vertices, triangle_indices, vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-    //co_await std::async(std::launch::async, []() ->std::future <void> {
-    //    co_await DX::ReadDataAsync(L"ms-appx:///gltfPixelShader.cso");
-    //});
-    //EngineCore::Graphics::ResourceID shader_rsrc = m_rsrc_manager->invalidResourceID();
 
     auto shader_rsrc = resource_manager.createShaderProgramAsync(
         "gltf_debug_shader",
         shader_names,
         vertex_layout);
 
-
     mtl_mngr.addComponent(debug_entity, "debug_material", shader_rsrc);
 
     auto transform_cached_idx = transform_mngr.getIndex(debug_entity);
     auto mesh_cached_idx = mesh_mngr.getIndex(debug_entity);
     auto mtl_cached_idx = mtl_mngr.getIndex(debug_entity);
-    renderTask_mngr.addComponent(debug_entity, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
+    staticMesh_renderTask_mngr.addComponent(debug_entity, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
+
+
+    // prototyping textured spatial window
+    {
+        Entity spatial_window = entity_mngr.create();
+        name_mngr.addComponent(spatial_window, "spatial_window");
+        transform_mngr.addComponent(spatial_window, Vec3(2.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
+    
+        auto quad_vertices = std::make_shared<std::vector<std::vector<float>>>();
+        (*quad_vertices) = { {-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f},
+                                 {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f} };
+    
+        auto quad_indices = std::make_shared<std::vector<uint32_t>>(6);
+        (*quad_indices) = { 0,1,2,2,3,0 };
+    
+        auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
+        *vertex_layout = {
+            EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+            EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
+        };
+    
+        auto mesh_rsrc = mesh_mngr.addComponent(spatial_window, "spatial_window_mesh", quad_vertices, quad_indices, vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+        auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::ShaderFilename>>();
+        shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/static_mesh_unlit.vertex.cso", dxowl::ShaderProgram::VertexShader });
+        shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/textured_unlit.pixel.cso", dxowl::ShaderProgram::PixelShader });
+    
+        auto shader_rsrc = resource_manager.createShaderProgramAsync(
+            "spatial_window_shader",
+            shader_names,
+            vertex_layout);
+
+        D3D11_TEXTURE2D_DESC tx_desc;
+        tx_desc.Width = 512;
+        tx_desc.Height = 512;
+        tx_desc.MipLevels = 1;
+        tx_desc.ArraySize = 1;
+        tx_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        tx_desc.CPUAccessFlags = 0;
+        tx_desc.SampleDesc.Count = 1;
+        tx_desc.SampleDesc.Quality = 0;
+        tx_desc.Usage = D3D11_USAGE_DEFAULT;
+        tx_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        tx_desc.CPUAccessFlags = 0;
+        tx_desc.MiscFlags = 0;
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC SMViewDesc;
+        SMViewDesc.Format = tx_desc.Format;
+        SMViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        SMViewDesc.TextureCube.MipLevels = tx_desc.MipLevels;
+        SMViewDesc.TextureCube.MostDetailedMip = 0;
+
+        auto tx_data = std::make_shared<std::vector<std::array<uint8_t, 4>>>(512*512);
+        //(*tx_data) = { { 255,0,255,255 } };
+
+        //TODO add texture creation that doesn't use a vector of data storage containers
+        auto tx_rsrcID = resource_manager.createTexture2DAsync(
+            "spatial_window_texture",
+            tx_data, tx_desc, SMViewDesc);
+        std::vector<std::pair<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>::TextureSemantic,EngineCore::Graphics::ResourceID>> textures 
+            = { { EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>::TextureSemantic::ALBEDO, tx_rsrcID } };
+    
+        mtl_mngr.addComponent(
+            spatial_window,
+            "spatial_window_mtl",
+            shader_rsrc,
+            { 0.0f,0.0f,0.0f,0.0f },
+            { 0.0f,0.0f,0.0f,0.0f },
+            0.0f,
+            textures
+        );
+    
+        auto transform_cached_idx = transform_mngr.getIndex(spatial_window);
+        auto mesh_cached_idx = mesh_mngr.getIndex(spatial_window);
+        auto mtl_cached_idx = mtl_mngr.getIndex(spatial_window);
+        unlit_renderTask_mngr.addComponent(spatial_window, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
+    }
 
     //auto skinned_mesh_shader_names = std::make_shared<std::vector<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>>(
     //    std::initializer_list<EngineCore::Graphics::OpenGL::ResourceManager::ShaderFilename>{
@@ -269,7 +347,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     //    }
     //}
 
-    //gltf_mngr.importGltfScene(EngineCore::Utility::GetAppFolder().string() + "Resources/Duck.gltf", shader_rsrc);
+    //gltf_mngr.importGltfScene(EngineCore::Utility::GetAppFolder().string() + "Resources/FlightHelmet.gltf", shader_rsrc);
 
 
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/Main/NewSponza_Main_Blender_glTF.gltf", shader_rsrc);
@@ -581,8 +659,9 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
             auto& resource_manager = m_engine_frontend->accessResourceManager();
             auto& frame_manager = m_engine_frontend->accessFrameManager();
 
-            //  Editor::Controls::CameraController cam_ctrl(world_state, frame_manager);
-            //  m_input_action_contexts.push_back(cam_ctrl.getInputActionContext());
+            Editor::Controls::CameraController cam_ctrl(world_state);
+            m_input_action_contexts.push_back(cam_ctrl.getKeyboardInputActionContext());
+            m_input_action_contexts.push_back(cam_ctrl.getGamepadInputActionContext());
             //m_engine_frontend->addInputActionContext(cam_ctrl.getInputActionContext());
             createDemoScene(world_state, resource_manager);
 
@@ -615,12 +694,41 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
 
         auto engine_render_loop = [this]()
         {
+            auto window = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread();
+
+            //struct
+            //    __declspec(uuid("45D64A29-A63E-4CB6-B498-5781D298CB4F"))
+            //    __declspec(novtable)
+            //    ICoreWindowInterop : public IUnknown
+            //{
+            //    virtual HRESULT STDMETHODCALLTYPE get_WindowHandle(HWND* hwnd) = 0;
+            //    virtual HRESULT STDMETHODCALLTYPE put_MessageHandled(unsigned char value) = 0;
+            //};
+            //
+            //winrt::com_ptr<ICoreWindowInterop> interop{};
+            //winrt::check_hresult(winrt::get_unknown(window)->QueryInterface(interop.put()));
+            //HWND hwnd{};
+            //winrt::check_hresult(interop->get_WindowHandle(&hwnd));
+
+            // Init ImGui
+            // Because we mostly want to use it for passive display at the moment, we ignore the IO part
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO(); (void)io;
+            ImGui_ImplUWP_Init();
+            ImGui_ImplDX11_Init(m_device_resources->GetD3DDevice(), m_device_resources->GetD3DDeviceContext());
+
             size_t render_frameID = 0;
             auto t_0 = std::chrono::high_resolution_clock::now();
             auto t_1 = std::chrono::high_resolution_clock::now();
 
             while (true)
             {
+                auto window_resolution = this->getWindowResolution();
+
+                ImGui_ImplDX11_NewFrame();
+                ImGui_ImplUWP_NewFrame(std::get<0>(window_resolution), std::get<1>(window_resolution));
+                ImGui::NewFrame();
+
                 double dt = std::chrono::duration_cast<std::chrono::duration<double>>(t_1 - t_0).count();
                 t_0 = std::chrono::high_resolution_clock::now();
 
@@ -628,9 +736,49 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
                     winrt::Windows::UI::Core::CoreProcessEventsOption::ProcessAllIfPresent
                 );
 
-                auto window_resolution = this->getWindowResolution();
+                processInputActions(dt);
 
                 m_engine_frontend->render(render_frameID++, dt, std::get<0>(window_resolution), std::get<1>(window_resolution));
+
+                ImGui::SetNextWindowPos(ImVec2(std::get<0>(window_resolution) - 375.0f, std::get<1>(window_resolution) - 100.0f));
+                bool p_open = true;
+                if (!ImGui::Begin("FPS", &p_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    ImGui::End();
+                    return;
+                }
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::End();
+                ImGui::Render();
+                ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+                ImGui::EndFrame();
+
+                // create temporary imgui context
+                auto orig_imgui_ctx = ImGui::GetCurrentContext();
+                auto imgui_ctx = ImGui::CreateContext(ImGui::GetFont()->ContainerAtlas);
+                ImGui::SetCurrentContext(imgui_ctx);
+                ImGuiIO& io = ImGui::GetIO(); (void)io;
+                ImGui_ImplUWP_Init();
+                ImGui_ImplDX11_Init(m_device_resources->GetD3DDevice(), m_device_resources->GetD3DDeviceContext());
+
+                ImGui_ImplDX11_NewFrame();
+                ImGui_ImplUWP_NewFrame(512, 512);
+                ImGui::NewFrame();
+
+                // create imgui/implot elements
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::End();
+
+                ImGui::Render();
+                ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+                ImGui::EndFrame();
+
+                // delete temporary imgui context, reset to original imgui context
+                ImGui::DestroyContext(imgui_ctx);
+                ImGui::SetCurrentContext(orig_imgui_ctx);
 
                 m_device_resources->Present();
 
@@ -656,6 +804,75 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
         return { m_pixel_width, m_pixel_height };
     }
 
+    void processInputActions(float dt) {
+        for (auto& input_context : m_input_action_contexts)
+        {
+            if (input_context.m_is_active)
+            {
+                for (auto& state_action : input_context.m_state_actions)
+                {
+                    std::vector<EngineCore::Common::Input::HardwareState> states;
+
+                    for (auto& part : state_action.m_state_query)
+                    {
+                        //  if (std::get<0>(part) == EngineCore::Common::Input::Device::KEYBOARD)
+                        //  {
+                        //      states.emplace_back(glfwGetKey(m_active_window, std::get<1>(part)) == GLFW_PRESS ? 1.0f : 0.0);
+                        //  }
+                        //  else if (std::get<0>(part) == EngineCore::Common::Input::Device::MOUSE_AXES)
+                        //  {
+                        //      double x, y;
+                        //      glfwGetCursorPos(m_active_window, &x, &y);
+                        //  
+                        //      if (std::get<1>(part) == EngineCore::Common::Input::MouseAxes::MOUSE_CURSOR_X)
+                        //      {
+                        //          states.emplace_back(x);
+                        //      }
+                        //      else if (std::get<1>(part) == EngineCore::Common::Input::MouseAxes::MOUSE_CURSOR_Y)
+                        //      {
+                        //          states.emplace_back(y);
+                        //      }
+                        //  }
+                        //  else if (std::get<0>(part) == EngineCore::Common::Input::Device::MOUSE_BUTTON)
+                        //  {
+                        //      if (std::get<1>(part) == EngineCore::Common::Input::MouseButtons::MOUSE_BUTTON_RIGHT)
+                        //      {
+                        //          states.emplace_back(glfwGetMouseButton(m_active_window, std::get<1>(part)) == GLFW_PRESS ? 1.0f : 0.0f);
+                        //      }
+                        //  }
+                        if (std::get<0>(part) == EngineCore::Common::Input::Device::GAMEPAD_AXES)
+                        {
+
+                            auto game_pads = winrt::Windows::Gaming::Input::Gamepad::Gamepads();
+
+                            if (game_pads.Size() > 0)
+                            {
+                                auto const& game_pad_reading = game_pads.GetAt(0).GetCurrentReading();
+
+                                if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_LEFT_X) {
+                                    states.emplace_back(game_pad_reading.LeftThumbstickX);
+                                }
+                                else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_LEFT_Y) {
+                                    states.emplace_back(game_pad_reading.LeftThumbstickY);
+                                }
+                                else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_RIGHT_X) {
+                                    states.emplace_back(game_pad_reading.RightThumbstickX);
+                                }
+                                else if (std::get<1>(part) == EngineCore::Common::Input::GamepadAxes::GAMEPAD_AXIS_RIGHT_Y) {
+                                    states.emplace_back(game_pad_reading.RightThumbstickY);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!states.empty()) {
+                        state_action.m_action(state_action.m_state_query, states, dt);
+                    }
+                }
+            }
+        }
+    }
+
 private:
     void HandleWindowSizeChanged()
     {
@@ -676,6 +893,9 @@ private:
 
     std::shared_ptr<DX::DeviceResources>      m_device_resources;
     std::unique_ptr<DirectXEngineFrontendUWP> m_engine_frontend;
+
+    /** List of input contexts */
+    std::list<EngineCore::Common::Input::InputActionContext> m_input_action_contexts;
 
     bool  m_exit;
     bool  m_visible;

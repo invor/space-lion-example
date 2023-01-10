@@ -15,6 +15,8 @@
 #include "SkinComponentManager.hpp"
 #include "TransformComponentManager.hpp"
 
+#include "ImPlotOffscreenRenderPass.h"
+
 DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceResources>  const& device_resources)
     : m_task_schedueler(std::make_unique<EngineCore::Utility::TaskSchedueler>()),
     m_frame_manager(std::make_unique<EngineCore::Common::FrameManager<EngineCore::Graphics::Dx11::Frame>>()),
@@ -35,6 +37,7 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
     m_world_state->add<EngineCore::Graphics::SunlightComponentManager>(std::make_unique<EngineCore::Graphics::SunlightComponentManager>(1));
     m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>());
     m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>());
+    m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Unlit>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Unlit>>());
     m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>(250000));
     m_world_state->add<EngineCore::Animation::TurntableComponentManager>(std::make_unique<EngineCore::Animation::TurntableComponentManager>());
     m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
@@ -106,7 +109,9 @@ void DirectXEngineFrontendUWP::update(size_t udpate_frameID, double dt, int wind
 
         EngineCore::Graphics::Dx11::Frame& update_frame = m_frame_manager->setUpdateFrame(std::move(new_frame));
 
-        //Graphics::OpenGL::setupBasicForwardRenderingPipeline(update_frame, *m_world_state, *m_resource_manager);
+        // manually add render pass
+        Graphics::Dx11::addImPlotOffscreenRenderPass(update_frame, *m_world_state, *m_resource_manager);
+
         EngineCore::Graphics::Dx11::setupSimpleForwardRenderingPipeline(update_frame, *m_world_state, *m_resource_manager);
 
         m_frame_manager->swapUpdateFrame();
