@@ -5,7 +5,7 @@
 #include "RenderTaskComponentManager.hpp"
 
 #include <imgui.h>
-#include <examples/imgui_impl_dx11.h>
+#include <backends/imgui_impl_dx11.h>
 #include "imgui_impl_uwp.h"
 
 void Graphics::Dx11::addImPlotOffscreenRenderPass(EngineCore::Graphics::Dx11::Frame& frame, EngineCore::WorldState& world_state, EngineCore::Graphics::Dx11::ResourceManager& resource_mngr)

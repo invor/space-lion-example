@@ -5,8 +5,8 @@
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 #include <imgui.h>
-#include <examples/imgui_impl_glfw.h>
-#include <examples/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +17,7 @@
 #include "AtmosphereComponentManager.hpp"
 #include "CameraComponent.hpp"
 #include "gltfAssetComponentManager.hpp"
+#include "gltfAssetSystems.hpp"
 #include "MaterialComponentManager.hpp"
 #include "MeshComponentManager.hpp"
 #include "OceanComponent.hpp"
@@ -32,10 +33,10 @@
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::OpenGL::ResourceManager& resource_manager)
 {
     auto& entity_mngr = world_state.accessEntityManager();
-    auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager>();
     auto& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
-    auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
-    auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+    auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager>();
+    auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
     auto& ocean_mngr = world_state.get<OceanComponentManager>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
@@ -74,9 +75,9 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         //6359800.0,
         6420000.0);
 
-    Entity ocean_entity = entity_mngr.create();
-    transform_mngr.addComponent(ocean_entity, Vec3(0.0, 512, 0.0), Quat(), Vec3(1.0));
-    ocean_mngr.addComponent(ocean_entity, 50.0f, 512.0, 512);
+    //Entity ocean_entity = entity_mngr.create();
+    //transform_mngr.addComponent(ocean_entity, Vec3(0.0, 512, 0.0), Quat(), Vec3(1.0));
+    //ocean_mngr.addComponent(ocean_entity, 100.0f, 512.0, 512);
 
     // Create "no-texture" debugging textures
     {
@@ -231,6 +232,12 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         }
     }
 
+    //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf", shader_rsrc);
+    EngineCore::Graphics::importGltfScene(
+        world_state,
+        resource_manager,
+        "C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
+        shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CairoStreets/uploads_files_3389791_Cairo_Streets_Night.glb", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
@@ -338,7 +345,7 @@ struct App {
                 
                 auto& entity_mngr = world_state.accessEntityManager();
                 auto const& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
-                auto& mtl_mngr = world_state.get<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+                auto& mtl_mngr = world_state.get<EngineCore::Graphics::MaterialComponentManager>();
                 auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
                 auto& renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
                 auto const& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
@@ -456,32 +463,32 @@ struct App {
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
-                // create temporary imgui context
-                //auto orig_imgui_ctx = ImGui::GetCurrentContext();
-                auto imgui_ctx = ImGui::CreateContext(ImGui::GetFont()->ContainerAtlas);
-                ImGui::SetCurrentContext(imgui_ctx);
-                ImGuiIO& io = ImGui::GetIO(); (void)io;
-                if (!ImGui_ImplGlfw_InitForOpenGL(m_active_window, false))
-                    std::cerr << "Error during imgui init " << std::endl;
-                ImGui_ImplOpenGL3_Init("#version 450");
-
-                ImGui_ImplOpenGL3_NewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
-
-                // create imgui/implot elements
-                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-                bool window_status = ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                ImGui::End();
-
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-                // delete temporary imgui context, reset to original imgui context
-                ImGui::DestroyContext(imgui_ctx);
-                ImGui::SetCurrentContext(orig_imgui_ctx);
+                //  // create temporary imgui context
+                //  //auto orig_imgui_ctx = ImGui::GetCurrentContext();
+                //  auto imgui_ctx = ImGui::CreateContext(ImGui::GetFont()->ContainerAtlas);
+                //  ImGui::SetCurrentContext(imgui_ctx);
+                //  ImGuiIO& io = ImGui::GetIO(); (void)io;
+                //  if (!ImGui_ImplGlfw_InitForOpenGL(m_active_window, false))
+                //      std::cerr << "Error during imgui init " << std::endl;
+                //  ImGui_ImplOpenGL3_Init("#version 450");
+                //  
+                //  ImGui_ImplOpenGL3_NewFrame();
+                //  ImGui_ImplGlfw_NewFrame();
+                //  ImGui::NewFrame();
+                //  
+                //  // create imgui/implot elements
+                //  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                //  bool window_status = ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+                //  ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+                //  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                //  ImGui::End();
+                //  
+                //  ImGui::Render();
+                //  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                //  
+                //  // delete temporary imgui context, reset to original imgui context
+                //  ImGui::DestroyContext(imgui_ctx);
+                //  ImGui::SetCurrentContext(orig_imgui_ctx);
 
                 glfwSwapBuffers(m_active_window);
                 glfwPollEvents();

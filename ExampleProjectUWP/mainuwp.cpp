@@ -5,7 +5,7 @@
 #include "ResourceLoading.hpp"
 
 #include <imgui.h>
-#include <examples/imgui_impl_dx11.h>
+#include <backends/imgui_impl_dx11.h>
 #include "imgui_impl_uwp.h"
 
 #include "AtmosphereComponentManager.hpp"

@@ -36,10 +36,10 @@
             m_world_state(std::make_unique<EngineCore::WorldState>())
         {
             m_world_state->add<EngineCore::Physics::AirplanePhysicsComponentManager>(std::make_unique<EngineCore::Physics::AirplanePhysicsComponentManager>(128, *m_world_state.get()));
-            m_world_state->add<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(8, *m_resource_manager.get()));
+            m_world_state->add<EngineCore::Graphics::AtmosphereComponentManager>(std::make_unique<EngineCore::Graphics::AtmosphereComponentManager>(8));
             m_world_state->add<EngineCore::Graphics::CameraComponentManager>(std::make_unique<EngineCore::Graphics::CameraComponentManager>(8));
-            m_world_state->add<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_resource_manager.get(), *m_world_state.get()));
-            m_world_state->add<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(m_resource_manager.get()));
+            m_world_state->add<EngineCore::Graphics::GltfAssetComponentManager>(std::make_unique<EngineCore::Graphics::GltfAssetComponentManager>());
+            m_world_state->add<EngineCore::Graphics::MaterialComponentManager>(std::make_unique<EngineCore::Graphics::MaterialComponentManager>());
             m_world_state->add<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(m_resource_manager.get()));
             m_world_state->add<EngineCore::Common::NameComponentManager>(std::make_unique<EngineCore::Common::NameComponentManager>());
             m_world_state->add<OceanComponentManager>(std::make_unique<OceanComponentManager>());
@@ -92,7 +92,7 @@
 
             auto& entity_mngr     = m_world_state->accessEntityManager();
             auto& camera_mngr     = m_world_state->get<EngineCore::Graphics::CameraComponentManager>();
-            auto& mtl_mngr        = m_world_state->get<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
+            auto& mtl_mngr        = m_world_state->get<EngineCore::Graphics::MaterialComponentManager>();
             auto& mesh_mngr       = m_world_state->get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>();
             auto& rsrc_mngr       = (*m_resource_manager);
             auto& renderTask_mngr = m_world_state->get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>();
@@ -208,6 +208,7 @@
             }
 
             // TODO wait for world updates to finish...
+            m_task_schedueler->waitWhileBusy();
 
             // finalize engine update by creating a new frame
             EngineCore::Common::Frame new_frame;
