@@ -176,15 +176,27 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         {
             for (int z = -10; z <= 10; ++z)
             {
-                //auto gltf_root = entity_mngr.create();
-                //transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
-                //turntable_mngr.addComponent(gltf_root, 0.5f);
-                //
+                auto gltf_root = entity_mngr.create();
+                transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
+                turntable_mngr.addComponent(gltf_root, 0.5f);
+
+                //auto new_entities = EngineCore::Graphics::importGltfScene(
+                //    world_state,
+                //    resource_manager,
+                //    "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf",
+                //    //"C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
+                //    //"C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf",
+                //    shader_rsrc);
+                //for (auto const& entity : new_entities)
+                //{
+                //    transform_mngr.setParent(transform_mngr.getIndex(entity),gltf_root);
+                //}
+
                 //{
                 //    auto gltf_subobj = entity_mngr.create();
                 //    size_t transform_idx = transform_mngr.addComponent(gltf_subobj, Vec3(0.0, 0.0, 0.0));
                 //    transform_mngr.setParent(transform_idx, gltf_root);
-                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", "Avocado", shader_rsrc);
+                //    gltf_mngr.addComponent(gltf_subobj, "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", 0);
                 //}
     
                 //{
@@ -233,11 +245,13 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     }
 
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf", shader_rsrc);
-    EngineCore::Graphics::importGltfScene(
-        world_state,
-        resource_manager,
-        "C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
-        shader_rsrc);
+    //EngineCore::Graphics::importGltfScene(
+    //    world_state,
+    //    resource_manager,
+    //    //"C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
+    //    //"C:/Users/micha/Downloads/cyber-streets_sushi.gltf",
+    //    "C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf",
+    //    shader_rsrc);
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/CairoStreets/uploads_files_3389791_Cairo_Streets_Night.glb", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf", shader_rsrc);
     //gltf_mngr.importGltfScene("../../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf", shader_rsrc);
@@ -382,9 +396,9 @@ struct App {
             //m_engine_frontend->addInputActionContext(cam_ctrl.getInputActionContext());
             createDemoScene(world_state, resource_manager);
 
-            while (render_exec.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-                // do nothing so far...
-            }
+            //while (render_exec.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+            //    // do nothing so far...
+            //}
         };
 
         auto engine_update_loop = [this](std::shared_future<void> render_exec)
@@ -500,7 +514,7 @@ struct App {
         // Deferred starting and running of rendering on current thread (window and context usually live here)
         auto engine_render_exec = std::async(std::launch::deferred, engine_render_loop).share();
 
-        auto perf_crunch_0 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
+        //auto perf_crunch_0 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
         //auto perf_crunch_1 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
         //auto perf_crunch_2 = std::async(std::launch::async, perf_cruncher, engine_render_exec);
 

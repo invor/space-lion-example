@@ -21,6 +21,7 @@
 #include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
 #include "SkinComponentManager.hpp"
+#include "TaskSchedueler.hpp"
 
 #include "InputEvent.hpp"
 
@@ -47,20 +48,20 @@
             m_world_state->add<EngineCore::Graphics::SunlightComponentManager>(std::make_unique<EngineCore::Graphics::SunlightComponentManager>(1));
             m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>());
             m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>());
-            m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>(250000));
+            m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>(500000));
             m_world_state->add<EngineCore::Animation::TurntableComponentManager>(std::make_unique<EngineCore::Animation::TurntableComponentManager>());
             m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
             //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
 
-            m_world_state->add([](EngineCore::WorldState& world_state, double dt) {
+            m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskSchedueler& task_schedueler) {
                     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
                     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
-                    EngineCore::Animation::animateTurntables(transform_mngr,turntable_mngr,dt);
+                    EngineCore::Animation::animateTurntables(transform_mngr,turntable_mngr,dt,task_schedueler);
                 }
             );
 
             // start task schedueler with 1 thread
-            m_task_schedueler->run(1);
+            m_task_schedueler->run(3);
         }
 
         OpenGLEngineFrontend::~OpenGLEngineFrontend()
@@ -129,14 +130,13 @@
                 for (auto& system : active_systems)
                 {
                     auto& world_state = *m_world_state.get();
-                    m_task_schedueler->submitTask(
-                        [&world_state, dt, system]() {
-                            system(world_state, dt);
-                        }
-                    );
+                    system(world_state, dt, *m_task_schedueler);
+                    //m_task_schedueler->submitTask(
+                    //    [&world_state, dt, system]() {
+                    //        system(world_state, dt);
+                    //    }
+                    //);
                 }
-
-                // TODO wait for world updates to finish...
 
                 // finalize engine update by creating a new frame
                 EngineCore::Common::Frame new_frame;
@@ -200,15 +200,13 @@
             for (auto& system : active_systems)
             {
                 auto& world_state = *m_world_state.get();
-                m_task_schedueler->submitTask(
-                    [&world_state, dt, system]() {
-                        system(world_state, dt);
-                    }
-                );
+                system(world_state, dt, *m_task_schedueler);
+                //m_task_schedueler->submitTask(
+                //    [&world_state, dt, system]() {
+                //        system(world_state, dt);
+                //    }
+                //);
             }
-
-            // TODO wait for world updates to finish...
-            m_task_schedueler->waitWhileBusy();
 
             // finalize engine update by creating a new frame
             EngineCore::Common::Frame new_frame;
