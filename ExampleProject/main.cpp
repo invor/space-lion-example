@@ -170,15 +170,19 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         skinned_mesh_shader_names
     );
 
-    for (int x = -10; x <= 10; ++x)
+    for (int x = -50; x <= 50; ++x)
     {
-        for (int y = -10; y <= 10; ++y)
+        for (int y = -50; y <= 50; ++y)
         {
-            for (int z = -10; z <= 10; ++z)
+            for (int z = -50; z <= 50; ++z)
             {
                 auto gltf_root = entity_mngr.create();
                 transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
                 turntable_mngr.addComponent(gltf_root, 0.5f);
+
+                auto child = entity_mngr.create();
+                auto child_idx = transform_mngr.addComponent(child, Vec3(x, y, z));
+                transform_mngr.setParent(child_idx, gltf_root);
 
                 //auto new_entities = EngineCore::Graphics::importGltfScene(
                 //    world_state,
@@ -396,9 +400,9 @@ struct App {
             //m_engine_frontend->addInputActionContext(cam_ctrl.getInputActionContext());
             createDemoScene(world_state, resource_manager);
 
-            //while (render_exec.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-            //    // do nothing so far...
-            //}
+            while (render_exec.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                // do nothing so far...
+            }
         };
 
         auto engine_update_loop = [this](std::shared_future<void> render_exec)
