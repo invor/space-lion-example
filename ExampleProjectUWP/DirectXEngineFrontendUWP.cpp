@@ -29,8 +29,8 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
     m_world_state->add<EngineCore::Physics::AirplanePhysicsComponentManager>(std::make_unique<EngineCore::Physics::AirplanePhysicsComponentManager>(128, *m_world_state.get()));
     //m_world_state->add<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(8, *m_resource_manager.get()));
     m_world_state->add<EngineCore::Graphics::CameraComponentManager>(std::make_unique<EngineCore::Graphics::CameraComponentManager>(8));
-    m_world_state->add<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(std::make_unique<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(*m_resource_manager.get(), *m_world_state.get()));
-    m_world_state->add<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(std::make_unique<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(m_resource_manager.get()));
+    m_world_state->add<EngineCore::Graphics::GltfAssetComponentManager>(std::make_unique<EngineCore::Graphics::GltfAssetComponentManager>());
+    m_world_state->add<EngineCore::Graphics::MaterialComponentManager>(std::make_unique<EngineCore::Graphics::MaterialComponentManager>());
     m_world_state->add<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(std::make_unique<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(m_resource_manager.get()));
     m_world_state->add<EngineCore::Common::NameComponentManager>(std::make_unique<EngineCore::Common::NameComponentManager>());
     m_world_state->add<EngineCore::Graphics::PointlightComponentManager>(std::make_unique<EngineCore::Graphics::PointlightComponentManager>(16000));
@@ -38,15 +38,15 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
     m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::StaticMesh>>());
     m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::SkinnedMesh>>());
     m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Unlit>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Unlit>>());
-    m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>(250000));
+    m_world_state->add<EngineCore::Common::TransformComponentManager>(std::make_unique<EngineCore::Common::TransformComponentManager>());
     m_world_state->add<EngineCore::Animation::TurntableComponentManager>(std::make_unique<EngineCore::Animation::TurntableComponentManager>());
     m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
     //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
 
-    m_world_state->add([](EngineCore::WorldState& world_state, double dt) {
+    m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskSchedueler& task_schedueler) {
         auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
         auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
-        EngineCore::Animation::animateTurntables(transform_mngr, turntable_mngr, dt);
+        EngineCore::Animation::animateTurntables(transform_mngr, turntable_mngr, dt, task_schedueler);
         }
     );
 
@@ -73,11 +73,8 @@ void DirectXEngineFrontendUWP::update(size_t udpate_frameID, double dt, int wind
     for (auto& system : active_systems)
     {
         auto& world_state = *m_world_state.get();
-        m_task_schedueler->submitTask(
-            [&world_state, dt, system]() {
-                system(world_state, dt);
-            }
-        );
+        auto& task_schedueler = *m_task_schedueler.get();
+        system(world_state, dt, task_schedueler);
     }
 
     // TODO wait for world updates to finish...
