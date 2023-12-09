@@ -170,11 +170,11 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         skinned_mesh_shader_names
     );
 
-    for (int x = -50; x <= 50; ++x)
+    for (int x = -10; x <= 10; ++x)
     {
-        for (int y = -50; y <= 50; ++y)
+        for (int y = -10; y <= 10; ++y)
         {
-            for (int z = -50; z <= 50; ++z)
+            for (int z = -10; z <= 10; ++z)
             {
                 auto gltf_root = entity_mngr.create();
                 transform_mngr.addComponent(gltf_root, Vec3(x, y, z));
@@ -184,17 +184,17 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
                 auto child_idx = transform_mngr.addComponent(child, Vec3(x, y, z));
                 transform_mngr.setParent(child_idx, gltf_root);
 
-                //auto new_entities = EngineCore::Graphics::importGltfScene(
-                //    world_state,
-                //    resource_manager,
-                //    "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf",
-                //    //"C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
-                //    //"C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf",
-                //    shader_rsrc);
-                //for (auto const& entity : new_entities)
-                //{
-                //    transform_mngr.setParent(transform_mngr.getIndex(entity),gltf_root);
-                //}
+                auto new_entities = EngineCore::Graphics::importGltfScene(
+                    world_state,
+                    resource_manager,
+                    "../../glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf",
+                    //"C:/Users/micha/Downloads/uploads_files_2788393_Blend+file/Blend file/ARCH_mat-edit.gltf",
+                    //"C:/Users/micha/Downloads/JAS_39C_Gripen/JAS39CGripen.gltf",
+                    shader_rsrc);
+                for (auto const& entity : new_entities)
+                {
+                    transform_mngr.setParent(transform_mngr.getIndex(entity),gltf_root);
+                }
 
                 //{
                 //    auto gltf_subobj = entity_mngr.create();
@@ -423,6 +423,9 @@ struct App {
 
                 m_engine_frontend->update(update_frameID++, dt, std::get<0>(window_resolution), std::get<1>(window_resolution));
 
+                m_frame_ready_to_render.test_and_set();
+                m_frame_ready_to_render.notify_all();
+
                 render_exec_status = render_exec.wait_for(std::chrono::microseconds(0));
 
                 t_1 = std::chrono::high_resolution_clock::now();
@@ -458,6 +461,9 @@ struct App {
                 t0 = t1;
                 t1 = glfwGetTime();
                 double dt = t1 - t0;
+
+                m_frame_ready_to_render.wait(false);
+                m_frame_ready_to_render.clear();
 
                 // Get current frame for rendering
                 auto& frame = m_engine_frontend->accessFrameManager().getRenderFrame();
@@ -622,6 +628,8 @@ struct App {
 
     std::mutex m_window_mutex;
     //std::condition_variable m_winodw_cVar;
+
+    std::atomic_flag m_frame_ready_to_render = ATOMIC_FLAG_INIT;
 
     /** List of input contexts */
     std::list<EngineCore::Common::Input::InputActionContext> m_input_action_contexts;

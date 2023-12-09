@@ -9,7 +9,7 @@
 #include "Dx11/Dx11Frame.hpp"
 #include "Dx11/ResourceManager.hpp"
 #include "InputEvent.hpp"
-#include "TaskSchedueler.hpp"
+#include "TaskScheduler.hpp"
 #include "WorldState.hpp"
 
 class DirectXEngineFrontendUWP : public DX::IDeviceNotify
@@ -55,7 +55,7 @@ private:
     void createWindowSizeDependentResources();
 
     // Simple multi-thread task schedueler
-    std::unique_ptr<EngineCore::Utility::TaskSchedueler>                         m_task_schedueler;
+    std::unique_ptr<EngineCore::Utility::TaskScheduler>                         m_task_schedueler;
 
     // The frame manager used to carry over snapshots of the world simulation to rendering.
     std::unique_ptr<EngineCore::Common::FrameManager<EngineCore::Graphics::Dx11::Frame>> m_frame_manager;

@@ -21,7 +21,7 @@
 #include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
 #include "SkinComponentManager.hpp"
-#include "TaskSchedueler.hpp"
+#include "TaskScheduler.hpp"
 
 #include "InputEvent.hpp"
 
@@ -30,7 +30,7 @@
 
         OpenGLEngineFrontend::OpenGLEngineFrontend()
             : m_engine_started(false),
-            m_task_schedueler(std::make_unique<EngineCore::Utility::TaskSchedueler>()),
+            m_task_scheduler(std::make_unique<EngineCore::Utility::TaskScheduler>()),
             m_frame_manager(std::make_unique<EngineCore::Common::FrameManager<EngineCore::Common::Frame>>()),
             m_graphics_backend(std::make_unique<EngineCore::Graphics::OpenGL::GraphicsBackend>()),
             m_resource_manager(std::make_unique<EngineCore::Graphics::OpenGL::ResourceManager>()),
@@ -54,7 +54,7 @@
             m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
             //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
 
-            m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskSchedueler& task_schedueler) {
+            m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskScheduler& task_schedueler) {
                     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
                     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
                     EngineCore::Animation::animateTurntables(transform_mngr,turntable_mngr,dt,task_schedueler);
@@ -62,12 +62,12 @@
             );
 
             // start task schedueler with 1 thread
-            m_task_schedueler->run(3);
+            m_task_scheduler->run(3);
         }
 
         OpenGLEngineFrontend::~OpenGLEngineFrontend()
         {
-            m_task_schedueler->stop();
+            m_task_scheduler->stop();
         }
 
         void OpenGLEngineFrontend::startEngine()
@@ -84,7 +84,7 @@
             //auto render_exec_status = render_exec.wait_for(std::chrono::microseconds(0));
 
             // start task schedueler with 1 thread
-            //m_task_schedueler->run(1);
+            //task_scheduler->run(1);
 
             auto t_0 = std::chrono::high_resolution_clock::now();
             auto t_1 = std::chrono::high_resolution_clock::now();
@@ -131,8 +131,8 @@
                 for (auto& system : active_systems)
                 {
                     auto& world_state = *m_world_state.get();
-                    system(world_state, dt, *m_task_schedueler);
-                    //m_task_schedueler->submitTask(
+                    system(world_state, dt, *m_task_scheduler);
+                    //task_scheduler->submitTask(
                     //    [&world_state, dt, system]() {
                     //        system(world_state, dt);
                     //    }
@@ -185,7 +185,7 @@
                 t_1 = std::chrono::high_resolution_clock::now();
             }
 
-            m_task_schedueler->stop();
+            m_task_scheduler->stop();
         }
 
         void OpenGLEngineFrontend::waitForEngineStarted()
@@ -201,8 +201,8 @@
             for (auto& system : active_systems)
             {
                 auto& world_state = *m_world_state.get();
-                system(world_state, dt, *m_task_schedueler);
-                //m_task_schedueler->submitTask(
+                system(world_state, dt, *m_task_scheduler);
+                //task_scheduler->submitTask(
                 //    [&world_state, dt, system]() {
                 //        system(world_state, dt);
                 //    }

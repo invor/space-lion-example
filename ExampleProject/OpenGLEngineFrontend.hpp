@@ -5,7 +5,7 @@
 
 #include "OpenGL/GraphicsBackend.hpp"
 #include "OpenGL/ResourceManager.hpp"
-#include "TaskSchedueler.hpp"
+#include "TaskScheduler.hpp"
 #include "WorldState.hpp"
 
 
@@ -51,7 +51,7 @@ private:
     /**
      * Simple multi-thread task schedueler.
      */
-    std::unique_ptr<EngineCore::Utility::TaskSchedueler> m_task_schedueler;
+    std::unique_ptr<EngineCore::Utility::TaskScheduler> m_task_scheduler;
 
     /**
      * The frame manager used to carry over snapshots of the world simulation to rendering.

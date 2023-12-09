@@ -26,8 +26,8 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& entity_mngr = world_state.accessEntityManager();
     //  auto& atmosphere_mngr = world_state.get<EngineCore::Graphics::AtmosphereComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& camera_mngr = world_state.get<EngineCore::Graphics::CameraComponentManager>();
-    auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
-    auto& mtl_mngr = world_state.get< EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
+    auto& gltf_mngr = world_state.get<EngineCore::Graphics::GltfAssetComponentManager>();
+    auto& mtl_mngr = world_state.get<EngineCore::Graphics::MaterialComponentManager>();
     auto& mesh_mngr = world_state.get<EngineCore::Graphics::MeshComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
     auto& name_mngr = world_state.get<EngineCore::Common::NameComponentManager>();
     auto& pointlight_mngr = world_state.get<EngineCore::Graphics::PointlightComponentManager>();
@@ -255,8 +255,8 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
         auto tx_rsrcID = resource_manager.createTexture2DAsync(
             "spatial_window_texture",
             tx_data, tx_desc, SMViewDesc);
-        std::vector<std::pair<EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>::TextureSemantic,EngineCore::Graphics::ResourceID>> textures 
-            = { { EngineCore::Graphics::MaterialComponentManager<EngineCore::Graphics::Dx11::ResourceManager>::TextureSemantic::ALBEDO, tx_rsrcID } };
+        std::vector<std::pair<EngineCore::Graphics::MaterialComponentManager::TextureSemantic,EngineCore::Graphics::ResourceID>> textures 
+            = { { EngineCore::Graphics::MaterialComponentManager::TextureSemantic::ALBEDO, tx_rsrcID } };
     
         mtl_mngr.addComponent(
             spatial_window,
