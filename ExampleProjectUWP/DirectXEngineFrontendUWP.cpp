@@ -73,9 +73,8 @@ void DirectXEngineFrontendUWP::update(size_t udpate_frameID, double dt, int wind
     for (auto& system : active_systems)
     {
         auto& world_state = *m_world_state.get();
-
-        system(world_state, dt, *m_task_schedueler);
-
+        auto& task_schedueler = *m_task_schedueler.get();
+        system(world_state, dt, task_schedueler);
     }
 
     // TODO wait for world updates to finish...
