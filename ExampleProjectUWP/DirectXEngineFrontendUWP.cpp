@@ -18,7 +18,7 @@
 #include "ImPlotOffscreenRenderPass.h"
 
 DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceResources>  const& device_resources)
-    : m_task_schedueler(std::make_unique<EngineCore::Utility::TaskSchedueler>()),
+    : m_task_schedueler(std::make_unique<EngineCore::Utility::TaskScheduler>()),
     m_frame_manager(std::make_unique<EngineCore::Common::FrameManager<EngineCore::Graphics::Dx11::Frame>>()),
     m_resource_manager(std::make_unique<EngineCore::Graphics::Dx11::ResourceManager>()),
     m_world_state(std::make_unique<EngineCore::WorldState>()),
@@ -43,7 +43,7 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
     m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
     //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
 
-    m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskSchedueler& task_schedueler) {
+    m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskScheduler& task_schedueler) {
         auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
         auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
         EngineCore::Animation::animateTurntables(transform_mngr, turntable_mngr, dt, task_schedueler);
