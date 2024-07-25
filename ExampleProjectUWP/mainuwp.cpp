@@ -160,47 +160,86 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
             tx_data, tx_desc, SMViewDesc);
     }
 
-    auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::ShaderFilename>>();
-    shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/static_mesh.vertex.cso", dxowl::ShaderProgram::VertexShader });
-    shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/forward_pbr.pixel.cso", dxowl::ShaderProgram::PixelShader });
+    //auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::ShaderFilename>>();
+    //shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/static_mesh.vertex.cso", dxowl::ShaderProgram::VertexShader });
+    //shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/forward_pbr.pixel.cso", dxowl::ShaderProgram::PixelShader });
+    //
+    //
+    //Entity debug_entity = entity_mngr.create();
+    //
+    //transform_mngr.addComponent(debug_entity, Vec3(0.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
+    //turntable_mngr.addComponent(debug_entity, 0.5f);
+    //
+    //auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
+    //(*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+    //                         {-0.25f, 0.0f, 0.0f, 0.25f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f},
+    //                         {1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+    //                         {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
+    //
+    //auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
+    //(*triangle_indices) = { 0,1,2 };
+    //
+    //auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
+    //*vertex_layout = {
+    //    EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+    //    EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+    //    EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{16, {{"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+    //    EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 3, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
+    //};
+    //
+    //auto mesh_rsrc = mesh_mngr.addComponent(debug_entity, "debug_mesh", triangle_vertices, triangle_indices, vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //
+    //auto shader_rsrc = resource_manager.createShaderProgramAsync(
+    //    "gltf_debug_shader",
+    //    shader_names,
+    //    vertex_layout);
+    //
+    //mtl_mngr.addComponent(debug_entity, "debug_material", shader_rsrc);
+    //
+    //auto transform_cached_idx = transform_mngr.getIndex(debug_entity);
+    //auto mesh_cached_idx = mesh_mngr.getIndex(debug_entity);
+    //auto mtl_cached_idx = mtl_mngr.getIndex(debug_entity);
+    //staticMesh_renderTask_mngr.addComponent(debug_entity, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
 
+    {
+        Entity cylinder = entity_mngr.create();
+        transform_mngr.addComponent(cylinder, Vec3(0.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
+        turntable_mngr.addComponent(cylinder, 0.5f);
 
-    Entity debug_entity = entity_mngr.create();
+        auto cylinder_geometry = EngineCore::Graphics::createCylinder(0.5f,2.0f,64);
+        auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
+        *vertex_layout = {
+            EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+            EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
+            //EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{24, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
+        };
 
-    transform_mngr.addComponent(debug_entity, Vec3(0.0f, 0.0f, -2.0f), Quat(0.0f, Vec3(0.0f, 1.0f, 0.0f)), Vec3(1.0f, 1.0f, 1.0f));
-    turntable_mngr.addComponent(debug_entity, 0.5f);
+        auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
+        (*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+                                 {-0.25f, 0.0f, 0.0f, 0.25f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f},
+                                 {1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+                                 {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
+        
+        auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
+        (*triangle_indices) = { 0,1,2 };
 
-    auto triangle_vertices = std::make_shared<std::vector<std::vector<float>>>();
-    (*triangle_vertices) = { {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
-                             {-0.25f, 0.0f, 0.0f, 0.25f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f},
-                             {1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
-                             {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} };
+        auto mesh_rsrc = mesh_mngr.addComponent(cylinder, "debug_mesh", std::get<0>(cylinder_geometry), std::get<1>(cylinder_geometry), vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto triangle_indices = std::make_shared<std::vector<uint32_t>>(3);
-    (*triangle_indices) = { 0,1,2 };
+        auto shader_names = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::ShaderFilename>>();
+        shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/static_mesh_untextured.vertex.cso", dxowl::ShaderProgram::VertexShader });
+        shader_names->push_back({ EngineCore::Utility::GetAppFolder().string() + "SpaceLion/forward_pbr.pixel.cso", dxowl::ShaderProgram::PixelShader });
+        auto shader_rsrc = resource_manager.createShaderProgramAsync(
+            "static_mesh_untextured_debug_shader",
+            shader_names,
+            vertex_layout);
 
-    auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
-    *vertex_layout = {
-        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
-        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
-        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{16, {{"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}},
-        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8, {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 3, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }}}
-    };
+        mtl_mngr.addComponent(cylinder, "debug_material", shader_rsrc);
 
-    auto mesh_rsrc = mesh_mngr.addComponent(debug_entity, "debug_mesh", triangle_vertices, triangle_indices, vertex_layout, DXGI_FORMAT_R32_UINT, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    auto shader_rsrc = resource_manager.createShaderProgramAsync(
-        "gltf_debug_shader",
-        shader_names,
-        vertex_layout);
-
-    mtl_mngr.addComponent(debug_entity, "debug_material", shader_rsrc);
-
-    auto transform_cached_idx = transform_mngr.getIndex(debug_entity);
-    auto mesh_cached_idx = mesh_mngr.getIndex(debug_entity);
-    auto mtl_cached_idx = mtl_mngr.getIndex(debug_entity);
-    staticMesh_renderTask_mngr.addComponent(debug_entity, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
-
+        auto transform_cached_idx = transform_mngr.getIndex(cylinder);
+        auto mesh_cached_idx = mesh_mngr.getIndex(cylinder);
+        auto mtl_cached_idx = mtl_mngr.getIndex(cylinder);
+        staticMesh_renderTask_mngr.addComponent(cylinder, mesh_rsrc, 0, shader_rsrc, 0, transform_cached_idx, mesh_cached_idx.front(), mtl_cached_idx.front(), true);
+    }
 
     // prototyping textured spatial window
     {
