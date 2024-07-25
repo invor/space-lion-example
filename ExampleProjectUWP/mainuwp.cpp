@@ -15,11 +15,14 @@
 #include "NameComponentManager.hpp"
 #include "MaterialComponentManager.hpp"
 #include "MeshComponentManager.hpp"
+#include "ParticlesComponentManager.hpp"
 #include "PointlightComponent.hpp"
 #include "RenderTaskComponentManager.hpp"
 #include "SunlightComponentManager.hpp"
 #include "TransformComponentManager.hpp"
 #include "TurntableComponentManager.hpp"
+
+#include <random>
 
 void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::Dx11::ResourceManager& resource_manager)
 {
@@ -37,6 +40,7 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     auto& sunlight_mngr = world_state.get<EngineCore::Graphics::SunlightComponentManager>();
     auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
     auto& turntable_mngr = world_state.get<EngineCore::Animation::TurntableComponentManager>();
+    auto& particles_mngr = world_state.get<EngineCore::Graphics::ParticlesComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
 
     auto camera = entity_mngr.create();
     transform_mngr.addComponent(camera, Vec3(0.0, 0.0, 10.0));
@@ -369,6 +373,61 @@ void createDemoScene(EngineCore::WorldState& world_state, EngineCore::Graphics::
     //gltf_mngr.importGltfScene("C:/Users/micha/Downloads/scifi_girl_v.01/scene.gltf", shader_rsrc);
 
     //gltf_mngr.clearModelCache();
+
+
+    // test and debug particles rendering
+    {
+        auto& particles_mngr = world_state.get<EngineCore::Graphics::ParticlesComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>();
+        auto& particles_renderTask_mngr = world_state.get<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Particles>>();
+
+        // empty vertex layout?
+        auto vertex_layout = std::make_shared<std::vector<EngineCore::Graphics::Dx11::ResourceManager::VertexLayout>>();
+        *vertex_layout = {
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{12, {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}}},
+        EngineCore::Graphics::Dx11::ResourceManager::VertexLayout{8,  {{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}}}
+        };
+
+        typedef std::pair < std::string, dxowl::ShaderProgram::ShaderType > ShaderFilename;
+
+        auto shader_names = std::make_shared<std::vector<ShaderFilename>>(
+            std::initializer_list<ShaderFilename>{
+                { EngineCore::Utility::GetAppFolder().string() + "SpaceLion/particles.vertex.cso", dxowl::ShaderProgram::VertexShader },
+                { EngineCore::Utility::GetAppFolder().string() + "SpaceLion/particles.pixel.cso", dxowl::ShaderProgram::PixelShader }
+        }
+        );
+
+        auto shader_rsrc = resource_manager.createShaderProgramAsync(
+            "area_indicator",
+            shader_names,
+            vertex_layout);
+
+        auto particles_entity = entity_mngr.create();
+        auto xform_idx = transform_mngr.addComponent(particles_entity);
+        mtl_mngr.addComponent(particles_entity, "particles", shader_rsrc);
+        auto mtl_idx = mtl_mngr.getIndex(particles_entity).front();
+        struct Particle {
+            float position[3];
+            float radius;
+        };
+        auto particles_data = std::make_shared<std::vector<Particle>>();
+        size_t particles_cnt = 1000000;
+        particles_data->reserve(particles_cnt);
+
+        std::uniform_real_distribution<float> pos_dist(0, 1);
+        std::uniform_real_distribution<float> rad_dist(0.05,0.15);
+        std::mt19937 prng;
+
+        for (int i = 0; i < particles_cnt; ++i) {
+            float x = pos_dist(prng) * 10.0f - 0.5f * 10.0f;
+            float y = pos_dist(prng) * 10.0f - 0.5f * 10.0f;
+            float z = pos_dist(prng) * 10.0f - 0.5f * 10.0f;
+            float r = rad_dist(prng);
+            particles_data->push_back({ {x,y,z},r });
+        }
+
+        particles_mngr.addComponent(particles_entity, particles_data);
+        particles_renderTask_mngr.addComponent(particles_entity, EngineCore::Graphics::ResourceID(), 0, shader_rsrc, 0, xform_idx, 0, mtl_idx, true);
+    }
 }
 
 // Refer to https://github.com/walbourn/directx-vs-templates/tree/main/d3d11game_uwp_cppwinrt_dr
@@ -752,33 +811,6 @@ struct App : winrt::implements<App, winrt::Windows::ApplicationModel::Core::IFra
                 ImGui::Render();
                 ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
                 ImGui::EndFrame();
-
-                // create temporary imgui context
-                auto orig_imgui_ctx = ImGui::GetCurrentContext();
-                auto imgui_ctx = ImGui::CreateContext(ImGui::GetFont()->ContainerAtlas);
-                ImGui::SetCurrentContext(imgui_ctx);
-                ImGuiIO& io = ImGui::GetIO(); (void)io;
-                ImGui_ImplUWP_Init();
-                ImGui_ImplDX11_Init(m_device_resources->GetD3DDevice(), m_device_resources->GetD3DDeviceContext());
-
-                ImGui_ImplDX11_NewFrame();
-                ImGui_ImplUWP_NewFrame(512, 512);
-                ImGui::NewFrame();
-
-                // create imgui/implot elements
-                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                ImGui::End();
-
-                ImGui::Render();
-                ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-                ImGui::EndFrame();
-
-                // delete temporary imgui context, reset to original imgui context
-                ImGui::DestroyContext(imgui_ctx);
-                ImGui::SetCurrentContext(orig_imgui_ctx);
 
                 m_device_resources->Present();
 

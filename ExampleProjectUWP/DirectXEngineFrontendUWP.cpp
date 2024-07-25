@@ -14,6 +14,7 @@
 #include "SunlightComponentManager.hpp"
 #include "SkinComponentManager.hpp"
 #include "TransformComponentManager.hpp"
+#include "ParticlesComponentManager.hpp"
 
 #include "ImPlotOffscreenRenderPass.h"
 
@@ -42,6 +43,8 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
     m_world_state->add<EngineCore::Animation::TurntableComponentManager>(std::make_unique<EngineCore::Animation::TurntableComponentManager>());
     m_world_state->add<EngineCore::Animation::SkinComponentManager>(std::make_unique<EngineCore::Animation::SkinComponentManager>());
     //m_world_state->add<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(std::make_unique<EngineCore::Graphics::Landscape::FeatureCurveComponentManager<EngineCore::Graphics::OpenGL::ResourceManager>>(*m_world_state.get(), *m_resource_manager.get()));
+    m_world_state->add<EngineCore::Graphics::ParticlesComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(std::make_unique<EngineCore::Graphics::ParticlesComponentManager<EngineCore::Graphics::Dx11::ResourceManager>>(m_resource_manager.get()));
+    m_world_state->add<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Particles>>(std::make_unique<EngineCore::Graphics::RenderTaskComponentManager<EngineCore::Graphics::RenderTaskTags::Particles>>());
 
     m_world_state->add([](EngineCore::WorldState& world_state, double dt, EngineCore::Utility::TaskScheduler& task_scheduler) {
         auto& transform_mngr = world_state.get<EngineCore::Common::TransformComponentManager>();
@@ -49,7 +52,6 @@ DirectXEngineFrontendUWP::DirectXEngineFrontendUWP(std::shared_ptr<DX::DeviceRes
         EngineCore::Animation::animateTurntables(transform_mngr, turntable_mngr, dt, task_scheduler);
         }
     );
-
     // start task schedueler with 1 thread
     m_task_schedueler->run(1);
 }
@@ -107,7 +109,7 @@ void DirectXEngineFrontendUWP::update(size_t udpate_frameID, double dt, int wind
         EngineCore::Graphics::Dx11::Frame& update_frame = m_frame_manager->setUpdateFrame(std::move(new_frame));
 
         // manually add render pass
-        Graphics::Dx11::addImPlotOffscreenRenderPass(update_frame, *m_world_state, *m_resource_manager);
+        //Graphics::Dx11::addImPlotOffscreenRenderPass(update_frame, *m_world_state, *m_resource_manager);
 
         EngineCore::Graphics::Dx11::setupSimpleForwardRenderingPipeline(update_frame, *m_world_state, *m_resource_manager);
 
@@ -123,6 +125,20 @@ void DirectXEngineFrontendUWP::render(size_t render_frameID, double dt, int wind
     // Get swapchain info from device resources
     frame.m_render_target_view = m_device_resources->GetRenderTargetView();
     frame.m_depth_stencil_view = m_device_resources->GetDepthStencilView();
+
+    // store camera info in frame
+    auto& camera_mngr = m_world_state->get<EngineCore::Graphics::CameraComponentManager>();
+    auto& transform_mngr = m_world_state->get<EngineCore::Common::TransformComponentManager>();
+    Entity camera_entity = camera_mngr.getActiveCamera();
+    auto camera_idx = camera_mngr.getIndex(camera_entity).front();
+    auto camera_transform_idx = transform_mngr.getIndex(camera_entity);
+    frame.m_view_projections[0].view_matrix = glm::inverse(transform_mngr.getWorldTransformation(camera_transform_idx));
+
+    if (frame.m_window_width != 0 && frame.m_window_height != 0) {
+        camera_mngr.setAspectRatio(camera_idx, static_cast<float>(frame.m_window_width) / static_cast<float>(frame.m_window_height));
+        camera_mngr.updateProjectionMatrix(camera_idx);
+        frame.m_view_projections[0].projection_matrix = camera_mngr.getProjectionMatrix(camera_idx);
+    }
 
     std::vector<double> setup_resource_timings;
     setup_resource_timings.reserve(frame.m_render_passes.size());
