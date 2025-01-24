@@ -43,11 +43,6 @@ public:
      */
     EngineCore::Graphics::Dx11::ResourceManager& accessResourceManager();
 
-    /**
-     * Pass on an input action context to window handling in graphics backend
-     */
-    void addInputActionContext(EngineCore::Common::Input::InputActionContext const& input_action_context);
-
 private:
 
     void createDeviceDependentResources();

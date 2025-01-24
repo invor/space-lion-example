@@ -192,10 +192,6 @@ EngineCore::Graphics::Dx11::ResourceManager& DirectXEngineFrontendUWP::accessRes
     return (*m_resource_manager);
 }
 
-void DirectXEngineFrontendUWP::addInputActionContext(EngineCore::Common::Input::InputActionContext const& input_action_context)
-{
-}
-
 void DirectXEngineFrontendUWP::createDeviceDependentResources()
 {
     //TODO

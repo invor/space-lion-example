@@ -35,6 +35,9 @@ target_sources(ExampleProjectUWP
         imgui_impl_uwp.cpp
         ImPlotOffscreenRenderPass.h
         ImPlotOffscreenRenderPass.cpp
+        DemoScene.hpp
+        DemoScene.cpp
+        platformUtility.hpp
         ${ResourceFiles}
 )
 target_link_libraries(ExampleProjectUWP PUBLIC SpaceLion d3d11 dxgi dxguid d2d1)
